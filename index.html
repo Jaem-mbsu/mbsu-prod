@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f5f5f7">
+<meta name="theme-color" content="#f5f5f7" id="meta-theme-color">
 <title>MBSU Prod</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -15,23 +15,55 @@
   --tx:#1c1c1e; --mu:#8e8e93; --mu2:#aeaeb2;
   --red:#ff3b30; --blue:#007aff; --green:#34c759; --amber:#ff9f0a;
   --red-d:rgba(255,59,48,.09); --blue-d:rgba(0,122,255,.1); --green-d:rgba(52,199,89,.1);
+  --hdr-bg:rgba(255,255,255,.88);
+  --shadow-1:0 1px 4px rgba(0,0,0,.06);
+  --shadow-2:0 6px 24px rgba(0,0,0,.12);
+  --shadow-card:0 1px 3px rgba(0,0,0,.04);
+  --input-focus-bg:#fff;
+}
+[data-theme="dark"]{
+  --bg:#000; --card:#1c1c1e; --card2:#2c2c2e;
+  --bd:#38383a; --bd2:#48484a;
+  --tx:#fff; --mu:#98989f; --mu2:#636366;
+  --red:#ff453a; --blue:#0a84ff; --green:#30d158; --amber:#ff9f0a;
+  --red-d:rgba(255,69,58,.18); --blue-d:rgba(10,132,255,.18); --green-d:rgba(48,209,88,.18);
+  --hdr-bg:rgba(28,28,30,.85);
+  --shadow-1:0 1px 4px rgba(0,0,0,.4);
+  --shadow-2:0 6px 24px rgba(0,0,0,.5);
+  --shadow-card:0 1px 3px rgba(0,0,0,.3);
+  --input-focus-bg:#2c2c2e;
 }
 html,body{height:100%;background:var(--bg);color:var(--tx);
   font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Segoe UI',sans-serif;
-  font-size:14px;line-height:1.5;-webkit-tap-highlight-color:transparent}
-button{cursor:pointer;font-family:inherit;border:none;background:none}
+  font-size:14px;line-height:1.5;-webkit-tap-highlight-color:transparent;
+  transition:background .25s ease, color .25s ease}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
 
-/* ── LOGIN (removed) ─────────────────────── */
+/* ── THEME TOGGLE ───────────────────────── */
+.theme-toggle{
+  position:absolute;top:14px;left:16px;
+  width:36px;height:36px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all .2s;
+  box-shadow:var(--shadow-1)
+}
+.theme-toggle:hover{transform:scale(1.08);border-color:var(--bd2)}
+.theme-toggle-inline{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .15s;flex-shrink:0
+}
+.theme-toggle-inline:hover{border-color:var(--bd2)}
 
 /* ── USER BAR (hidden when no auth) ─────── */
 .user-bar{display:none}
-
 /* ── PAGES ─────────────────────────────── */
 .page{display:none;min-height:100vh;flex-direction:column;max-width:640px;margin:0 auto;width:100%}
 .page.active{display:flex}
-
 /* ── HOME ────────────────────────────────── */
 .home-hero{
   padding:72px 28px 60px;background:var(--card);
@@ -41,7 +73,7 @@ input,select,textarea{font-family:inherit}
 .user-photo{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid var(--bd)}
 .signout-btn{font-size:11px;color:var(--mu);padding:4px 8px;border:1px solid var(--bd);border-radius:7px;background:var(--bg)}
 .signout-btn:hover{color:var(--red);border-color:rgba(255,59,48,.3)}
-.logo-hero{width:100px;height:100px;margin:0 auto 28px;display:block;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.logo-hero{width:100px;height:100px;margin:0 auto 28px;display:block;border-radius:24px;box-shadow:var(--shadow-2)}
 .home-title{font-size:36px;font-weight:800;letter-spacing:-.5px;color:var(--tx);margin-bottom:8px}
 .home-sub{font-size:10px;letter-spacing:3px;color:var(--mu2);text-transform:uppercase}
 .home-nav{padding:20px 16px 36px;background:var(--bg)}
@@ -50,9 +82,9 @@ input,select,textarea{font-family:inherit}
   background:var(--card);border:1px solid var(--bd);border-radius:16px;
   padding:20px 16px 18px;cursor:pointer;transition:all .18s;
   text-align:left;display:flex;flex-direction:column;
-  box-shadow:0 1px 4px rgba(0,0,0,.06)
+  box-shadow:var(--shadow-1)
 }
-.nav-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--bd2)}
+.nav-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-2);border-color:var(--bd2)}
 .nc-dot{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:14px;flex-shrink:0}
 .nc-red .nc-dot{background:var(--red-d)}
 .nc-green .nc-dot{background:var(--green-d)}
@@ -61,10 +93,9 @@ input,select,textarea{font-family:inherit}
 .nc-title{font-size:13px;font-weight:700;color:var(--tx)}
 .nc-desc{font-size:11px;color:var(--mu);margin-top:3px;flex:1}
 .nc-link{font-size:11px;color:var(--mu2);margin-top:12px}
-
 /* ── INNER HEADER ───────────────────────── */
 .inner-hdr{
-  background:rgba(255,255,255,.88);border-bottom:1px solid var(--bd);
+  background:var(--hdr-bg);border-bottom:1px solid var(--bd);
   padding:12px 16px;display:flex;align-items:center;gap:10px;
   position:sticky;top:0;z-index:80;
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)
@@ -74,22 +105,37 @@ input,select,textarea{font-family:inherit}
 .sep{color:var(--mu2);font-size:12px}
 .inner-title{font-weight:700;font-size:15px;color:var(--tx)}
 .hdr-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-.add-btn{background:var(--tx);color:#fff;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;transition:opacity .15s}
+.add-btn{background:var(--tx);color:var(--bg);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;transition:opacity .15s}
 .add-btn:hover{opacity:.75}
-
 /* ── SCHEDULE ───────────────────────────── */
 .sched-body{padding:14px;flex:1;overflow-y:auto;background:var(--bg)}
+.view-tabs{
+  display:flex;gap:0;margin-bottom:12px;
+  background:var(--card);border:1px solid var(--bd);border-radius:10px;
+  padding:3px;box-shadow:var(--shadow-1)
+}
+.vtab{
+  flex:1;padding:8px 10px;font-size:12px;font-weight:600;
+  color:var(--mu);border-radius:7px;transition:all .18s
+}
+.vtab.active{background:var(--tx);color:var(--bg)}
 .filter-row{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
 .fpill{padding:6px 14px;border-radius:20px;border:1px solid var(--bd);background:var(--card);color:var(--mu);font-size:11px;font-weight:500;transition:all .15s}
 .fpill:hover{color:var(--tx);border-color:var(--bd2)}
 .fpill.active{border-color:var(--red);background:var(--red-d);color:var(--red)}
-
 /* Calendar */
-.cal-card{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
-.cal-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bd)}
+.cal-card{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow-1)}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd);gap:6px}
+.cal-hdr-center{display:flex;align-items:center;gap:8px}
 .cal-month{font-weight:700;font-size:14px;color:var(--tx)}
 .cal-nav-btn{color:var(--mu2);font-size:18px;padding:4px 10px;border-radius:6px;transition:all .15s}
 .cal-nav-btn:hover{background:var(--bg);color:var(--tx)}
+.today-btn{
+  font-size:10px;font-weight:700;color:var(--red);
+  background:var(--red-d);border:1px solid rgba(255,59,48,.25);
+  padding:3px 10px;border-radius:8px;transition:all .15s
+}
+.today-btn:hover{background:rgba(255,59,48,.18)}
 .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);background:var(--card2);border-bottom:1px solid var(--bd)}
 .cal-dow{text-align:center;padding:7px 2px;font-size:10px;color:var(--mu2);font-weight:600}
 .cal-dow:first-child{color:var(--red)}.cal-dow:last-child{color:var(--blue)}
@@ -103,13 +149,12 @@ input,select,textarea{font-family:inherit}
 .cal-day:hover{background:var(--card2)}
 .cal-day.other-mo{opacity:.3;pointer-events:none}
 .cal-day.today .dn{background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
-.cal-day.sel{background:rgba(0,122,255,.06)}
+.cal-day.sel{background:var(--blue-d)}
 .dn{font-size:11px;color:var(--tx);display:block;margin-bottom:2px;line-height:20px}
 .cal-day:nth-child(7n+1) .dn{color:var(--red)}
 .cal-day:nth-child(7n) .dn{color:var(--blue)}
 .edots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;padding:0 2px}
 .edot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-
 /* Event list */
 .el-hdr{font-size:10px;color:var(--mu);letter-spacing:1px;text-transform:uppercase;
   display:flex;align-items:center;justify-content:space-between;
@@ -118,18 +163,17 @@ input,select,textarea{font-family:inherit}
 .ev-item{
   background:var(--card);border:1px solid var(--bd);border-radius:12px;
   padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;
-  transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04)
+  transition:all .15s;box-shadow:var(--shadow-card)
 }
-.ev-item:hover{border-color:var(--bd2);box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.ev-item:hover{border-color:var(--bd2);box-shadow:var(--shadow-2)}
 .ev-bar{width:3px;height:32px;border-radius:2px;flex-shrink:0}
 .ev-info{flex:1;min-width:0}
 .ev-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)}
 .ev-meta{font-size:10px;color:var(--mu);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
 .ev-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;flex-shrink:0;white-space:nowrap}
-.es-todo{background:rgba(142,142,147,.1);color:var(--mu)}
+.es-todo{background:rgba(142,142,147,.15);color:var(--mu)}
 .es-prog{background:var(--blue-d);color:var(--blue)}
 .es-done{background:var(--green-d);color:var(--green)}
-
 /* ── EQUIPMENT ──────────────────────────── */
 .eq-body{padding:0;flex:1;overflow-y:auto}
 .eq-top{padding:14px 14px 0}
@@ -139,7 +183,7 @@ input,select,textarea{font-family:inherit}
 .eq-inp::placeholder{color:var(--mu2)}.eq-inp:focus{outline:none;border-color:var(--blue)}
 .eq-filters{display:flex;gap:6px;padding:0 14px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .eq-filters::-webkit-scrollbar{display:none}
-.eq-fb{padding:7px 14px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.eq-fb{padding:7px 14px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--card)}
 .eq-fb:hover{color:var(--tx);border-color:var(--bd2)}.eq-fb.active{border-color:var(--green);background:var(--green-d);color:var(--green);font-weight:700}
 .eq-cat-block{margin-bottom:0}
 .eq-cat-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px 8px;background:var(--card2);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:10}
@@ -158,24 +202,22 @@ input,select,textarea{font-family:inherit}
 .eq-owner-tag{background:var(--bd);color:var(--mu);font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0}
 .eq-row-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .eq-qty-badge{font-size:11px;font-weight:700;color:var(--tx);background:var(--bg);border:1px solid var(--bd);padding:2px 9px;border-radius:7px;white-space:nowrap}
-
 /* ── FILMOGRAPHY ────────────────────────── */
 .filmo-tabs{display:flex;background:var(--card);border-bottom:1px solid var(--bd);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}
 .filmo-tabs::-webkit-scrollbar{display:none}
 .filmo-tab{padding:12px 20px;font-size:13px;font-weight:600;color:var(--mu);white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;flex-shrink:0}
 .filmo-tab.active{color:var(--tx);border-bottom-color:var(--tx)}
-.filmo-item{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px 14px 12px;cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:8px}
-.filmo-item:hover{border-color:var(--bd2);box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.filmo-item{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px 14px 12px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow-card);margin-bottom:8px}
+.filmo-item:hover{border-color:var(--bd2);box-shadow:var(--shadow-2)}
 .filmo-year-badge{display:inline-block;font-size:10px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--mu);padding:2px 8px;border-radius:6px;margin-bottom:8px}
 .filmo-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:4px}
 .filmo-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .filmo-type-badge{font-size:10px;font-weight:600;background:var(--bg);border:1px solid var(--bd);color:var(--mu);padding:2px 8px;border-radius:6px}
 .filmo-role{font-size:12px;color:var(--mu)}
 .filmo-notes{font-size:11px;color:var(--mu2);margin-top:6px}
-
 /* ── MISC ───────────────────────────────── */
 .list-body{padding:14px;flex:1;overflow-y:auto;background:var(--bg)}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:flex-end;justify-content:center}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
 .overlay.show{display:flex}
 .modal{background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px 32px;width:100%;max-width:480px;animation:slideUp .22s ease;max-height:92vh;overflow-y:auto}
 @keyframes slideUp{from{transform:translateY(100%)}}
@@ -185,25 +227,23 @@ input,select,textarea{font-family:inherit}
 .fg{margin-bottom:14px}
 .fl{font-size:11px;color:var(--mu);margin-bottom:5px;display:block;font-weight:600}
 .fi,.fsel{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--tx);font-size:13px;transition:border-color .15s}
-.fi::placeholder{color:var(--mu2)}.fi:focus,.fsel:focus{outline:none;border-color:var(--blue);background:#fff}
-.fsel option{background:#fff}
+.fi::placeholder{color:var(--mu2)}.fi:focus,.fsel:focus{outline:none;border-color:var(--blue);background:var(--input-focus-bg)}
+.fsel option{background:var(--card);color:var(--tx)}
 .f-actions{display:flex;gap:8px;margin-top:20px}
 .f-cancel{background:var(--bg);border:1px solid var(--bd);color:var(--tx);padding:11px 16px;border-radius:10px;font-size:13px;font-weight:500}
-.f-save{flex:1;background:var(--tx);color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;transition:opacity .15s}
+.f-save{flex:1;background:var(--tx);color:var(--bg);padding:11px;border-radius:10px;font-size:13px;font-weight:700;transition:opacity .15s}
 .f-save:hover{opacity:.8}
 .f-del{background:var(--red-d);border:1px solid rgba(255,59,48,.2);color:var(--red);padding:11px 14px;border-radius:10px;font-size:13px}
 .empty{text-align:center;padding:48px 20px;color:var(--mu2);font-size:13px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:400;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;z-index:400;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 .del-btn{font-size:10px;color:var(--red);border:1px solid rgba(255,59,48,.2);padding:4px 10px;border-radius:6px;background:var(--red-d);transition:all .15s}
 .del-btn:hover{background:rgba(255,59,48,.15)}
-
 /* ── PERSON CHIPS ───────────────────────── */
 .person-chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0}
 .pchip{padding:6px 13px;border-radius:20px;border:1px solid var(--bd);background:var(--bg);color:var(--mu);font-size:12px;font-weight:500;transition:all .15s;cursor:pointer}
 .pchip.active{border-color:currentColor;font-weight:700}
-
-/* ── OTT BADGE ──────────────────────────── */
+/* ── OTT/BROADCASTER BADGE ──────────────── */
 .ott-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid var(--bd);color:var(--mu);background:var(--bg);white-space:nowrap}
 .ott-netflix{background:#e50914;color:#fff;border-color:#e50914}
 .ott-disney{background:#113ccf;color:#fff;border-color:#113ccf}
@@ -213,20 +253,23 @@ input,select,textarea{font-family:inherit}
 .ott-apple{background:#1c1c1e;color:#fff;border-color:#1c1c1e}
 .ott-youtube{background:#ff0000;color:#fff;border-color:#ff0000}
 .ott-theater{background:#6d4c41;color:#fff;border-color:#6d4c41}
+.ott-kbs{background:#0064a8;color:#fff;border-color:#0064a8}
+.ott-sbs{background:#ffba00;color:#1c1c1e;border-color:#ffba00}
+.ott-mbc{background:#0c4ca3;color:#fff;border-color:#0c4ca3}
+.ott-tvn{background:#e60000;color:#fff;border-color:#e60000}
+.ott-jtbc{background:#e60067;color:#fff;border-color:#e60067}
 </style>
 </head>
 <body>
-
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
 <!-- ═══ APP ROOT ══════════════════════════════════════ -->
 <div id="app-root">
-
 <!-- ═══ HOME ═══════════════════════════════════════ -->
 <div class="page active" id="pg-home">
   <div class="home-hero">
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="테마 변경">🌙</button>
     <svg class="logo-hero" viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg">
       <rect width="76" height="76" rx="18" fill="#ffffff" stroke="#e5e5ea" stroke-width="1"/>
       <polyline points="14,40 14,13 41,13" fill="none" stroke="#1c1c1e" stroke-width="3.5" stroke-linecap="square" stroke-linejoin="miter"/>
@@ -273,7 +316,6 @@ input,select,textarea{font-family:inherit}
     </div>
   </div>
 </div>
-
 <!-- ═══ SCHEDULE ════════════════════════════════════ -->
 <div class="page" id="pg-schedule">
   <div class="inner-hdr">
@@ -281,15 +323,24 @@ input,select,textarea{font-family:inherit}
     <span class="sep">/</span>
     <span class="inner-title">일정 관리</span>
     <div class="hdr-right">
+      <button class="theme-toggle-inline" onclick="toggleTheme()" id="theme-btn-sched" title="테마">🌙</button>
       <button class="add-btn" onclick="openEvModal()">+ 일정 추가</button>
     </div>
   </div>
   <div class="sched-body">
+    <div class="view-tabs" id="sched-view-tabs">
+      <button class="vtab active" data-view="month" onclick="setSchedView('month')">이달 일정</button>
+      <button class="vtab" data-view="today" onclick="setSchedView('today')">오늘 일정</button>
+      <button class="vtab" data-view="all" onclick="setSchedView('all')">전체 일정</button>
+    </div>
     <div class="filter-row" id="sched-filters"></div>
     <div class="cal-card">
       <div class="cal-hdr">
         <button class="cal-nav-btn" onclick="chMon(-1)">‹</button>
-        <div class="cal-month" id="cal-label"></div>
+        <div class="cal-hdr-center">
+          <div class="cal-month" id="cal-label"></div>
+          <button class="today-btn" onclick="goToToday()">오늘</button>
+        </div>
         <button class="cal-nav-btn" onclick="chMon(1)">›</button>
       </div>
       <div class="cal-dow-row">
@@ -306,7 +357,6 @@ input,select,textarea{font-family:inherit}
     <div class="ev-list" id="sched-evlist"></div>
   </div>
 </div>
-
 <!-- ═══ EQUIPMENT ════════════════════════════════════ -->
 <div class="page" id="pg-equipment">
   <div class="inner-hdr">
@@ -314,6 +364,7 @@ input,select,textarea{font-family:inherit}
     <span class="sep">/</span>
     <span class="inner-title">장비리스트</span>
     <div class="hdr-right">
+      <button class="theme-toggle-inline" onclick="toggleTheme()" id="theme-btn-eq" title="테마">🌙</button>
       <button class="add-btn" onclick="openEqModal()">+ 장비 추가</button>
     </div>
   </div>
@@ -328,7 +379,6 @@ input,select,textarea{font-family:inherit}
     <div class="eq-list" id="eq-list"></div>
   </div>
 </div>
-
 <!-- ═══ EXPORTS ══════════════════════════════════════ -->
 <div class="page" id="pg-exports">
   <div class="inner-hdr">
@@ -336,6 +386,7 @@ input,select,textarea{font-family:inherit}
     <span class="sep">/</span>
     <span class="inner-title">반출리스트</span>
     <div class="hdr-right">
+      <button class="theme-toggle-inline" onclick="toggleTheme()" id="theme-btn-exp" title="테마">🌙</button>
       <button class="add-btn" onclick="openExpModal()">+ 반출 추가</button>
     </div>
   </div>
@@ -344,7 +395,6 @@ input,select,textarea{font-family:inherit}
     <div class="ev-list" id="exp-list"></div>
   </div>
 </div>
-
 <!-- ═══ FILMOGRAPHY ══════════════════════════════════ -->
 <div class="page" id="pg-filmography">
   <div class="inner-hdr">
@@ -352,6 +402,7 @@ input,select,textarea{font-family:inherit}
     <span class="sep">/</span>
     <span class="inner-title">필모그래피</span>
     <div class="hdr-right">
+      <button class="theme-toggle-inline" onclick="toggleTheme()" id="theme-btn-filmo" title="테마">🌙</button>
       <button class="add-btn" onclick="openFilmoModal()">+ 추가</button>
     </div>
   </div>
@@ -360,7 +411,6 @@ input,select,textarea{font-family:inherit}
     <div class="ev-list" id="filmo-list"></div>
   </div>
 </div>
-
 <!-- ═══ MODALS ════════════════════════════════════════ -->
 <div class="overlay" id="ev-overlay">
   <div class="modal">
@@ -397,7 +447,6 @@ input,select,textarea{font-family:inherit}
     </div>
   </div>
 </div>
-
 <div class="overlay" id="eq-overlay">
   <div class="modal">
     <div class="modal-hdr">
@@ -426,7 +475,6 @@ input,select,textarea{font-family:inherit}
     </div>
   </div>
 </div>
-
 <div class="overlay" id="exp-overlay">
   <div class="modal">
     <div class="modal-hdr">
@@ -443,7 +491,6 @@ input,select,textarea{font-family:inherit}
     </div>
   </div>
 </div>
-
 <div class="overlay" id="filmo-overlay">
   <div class="modal">
     <div class="modal-hdr">
@@ -464,15 +511,26 @@ input,select,textarea{font-family:inherit}
       <label class="fl">공개 플랫폼</label>
       <select class="fsel" id="filmo-ott">
         <option value="">—</option>
-        <option value="Netflix">Netflix</option>
-        <option value="Disney+">Disney+</option>
-        <option value="Wavve">Wavve</option>
-        <option value="Tving">Tving</option>
-        <option value="Coupang Play">Coupang Play</option>
-        <option value="Apple TV+">Apple TV+</option>
-        <option value="YouTube">YouTube</option>
-        <option value="극장 개봉">극장 개봉</option>
-        <option value="기타">기타</option>
+        <optgroup label="방송사">
+          <option value="KBS">KBS</option>
+          <option value="SBS">SBS</option>
+          <option value="MBC">MBC</option>
+          <option value="tvN">tvN</option>
+          <option value="JTBC">JTBC</option>
+        </optgroup>
+        <optgroup label="OTT">
+          <option value="Netflix">Netflix</option>
+          <option value="Disney+">Disney+</option>
+          <option value="Wavve">Wavve</option>
+          <option value="Tving">Tving</option>
+          <option value="Coupang Play">Coupang Play</option>
+          <option value="Apple TV+">Apple TV+</option>
+          <option value="YouTube">YouTube</option>
+        </optgroup>
+        <optgroup label="기타">
+          <option value="극장 개봉">극장 개봉</option>
+          <option value="기타">기타</option>
+        </optgroup>
       </select>
     </div>
     <div class="fg"><label class="fl">메모</label><input class="fi" id="filmo-notes" type="text" placeholder="수상, 상영제 등 (선택)"></div>
@@ -483,15 +541,35 @@ input,select,textarea{font-family:inherit}
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
-
 </div><!-- end #app-root -->
-
 <script>
 // ════════════════════════════════════════
+//  🌗 THEME (light / dark)
+// ════════════════════════════════════════
+(function initTheme(){
+  const saved = localStorage.getItem('mbsu-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+function syncThemeButtons(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon = isDark ? '☀️' : '🌙';
+  ['theme-btn','theme-btn-sched','theme-btn-eq','theme-btn-exp','theme-btn-filmo'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = icon;
+  });
+  const meta = document.getElementById('meta-theme-color');
+  if(meta) meta.setAttribute('content', isDark ? '#000000' : '#f5f5f7');
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const nxt = cur === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('mbsu-theme', nxt);
+  syncThemeButtons();
+}
+// ════════════════════════════════════════
 //  🔥 FIREBASE CONFIG
-//  Firebase 콘솔에서 프로젝트 생성 후 아래 값을 교체하세요
 // ════════════════════════════════════════
 const firebaseConfig = {
   apiKey:            "AIzaSyCi6trZA-DI3z2hLvUgshTcYMaLWNxo4b4",
@@ -501,16 +579,13 @@ const firebaseConfig = {
   messagingSenderId: "899152711355",
   appId:             "1:899152711355:web:c94ff0b41f4b2810c1639e"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
 // ════════════════════════════════════════
 //  CONSTANTS
 // ════════════════════════════════════════
 const PEOPLE = ['주미르','강영주','김준석','강지호','정재민'];
 const PERSON_COLOR = {'전체':'#8e8e93','주미르':'#007aff','강영주':'#34c759','김준석':'#ff6b35','강지호':'#ff9f0a','정재민':'#af52de'};
-
 const INIT_EV = [
   {id:'kt1', name:'KYJ_별짓_테스트 촬영',   date:'2026-02-24', status:'완료',    person:'전체',  location:''},
   {id:'b1',  name:'별짓_1회차_N_앙평',        date:'2026-02-24', status:'완료',    person:'전체',  location:'앙평'},
@@ -568,7 +643,6 @@ const INIT_EQ = [
   {id:'c3', name:'Impala',            company:'Chevrolet', types:['Car'],     qty:1,   notes:'16가6043',owner:''},
   {id:'c4', name:'Poter II supercap', company:'Hyundai',   types:['Car'],     qty:1,   notes:'',    owner:''},
 ];
-
 // ════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════
@@ -576,13 +650,17 @@ let events   = [];
 let equip    = [];
 let exports_ = [];
 let filmo    = {};
-
 let calY = new Date().getFullYear(), calM = new Date().getMonth();
 let schedF = 'all';
+let schedView = 'month'; // 'month' | 'today' | 'all'
 let eqF    = '전체';
 let filmoP = '주미르';
 let editEvId = null, editEqId = null, editFilmoId = null;
 let _unsubs = [];
+let selDate = null;
+
+// 페이지 로드 후 테마 버튼 동기화
+syncThemeButtons();
 
 // ────────────────────────────────────────
 //  PERSON CHIP TOGGLE
@@ -594,14 +672,11 @@ function toggleChip(btn){
     chips.forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
   } else {
-    // 전체 해제
     btn.closest('.person-chips').querySelector('[data-p="전체"]').classList.remove('active');
     btn.classList.toggle('active');
-    // 아무도 없으면 전체 선택
     const anyActive = [...chips].some(c => c.classList.contains('active') && c.dataset.p !== '전체');
     if(!anyActive) btn.closest('.person-chips').querySelector('[data-p="전체"]').classList.add('active');
   }
-  // 색상 반영
   chips.forEach(c => {
     if(c.classList.contains('active')){
       c.style.color = c.style.getPropertyValue('--pc') || '#8e8e93';
@@ -627,21 +702,15 @@ function setChips(persons){
     if(c) toggleChip(c);
   });
 }
-
 // 로그인 없이 바로 앱 시작
 setupListeners();
-
 // ════════════════════════════════════════
 //  FIRESTORE LISTENERS
 // ════════════════════════════════════════
 async function setupListeners(){
   _unsubs.forEach(u => u()); _unsubs = [];
-
-  // 첫 사용 시 초기 데이터 시드
   const evCheck = await db.collection('events').limit(1).get();
   if(evCheck.empty){ await seedData(); }
-
-  // 실시간 listeners
   _unsubs.push(
     db.collection('events').onSnapshot(snap => {
       events = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -669,20 +738,16 @@ async function setupListeners(){
     })
   );
 }
-
 function isActive(page){
   return document.getElementById('pg-'+page)?.classList.contains('active');
 }
-
 async function seedData(){
-  // events — 배치로 일괄 업로드
   let batch = db.batch();
   INIT_EV.forEach(e => {
     const {id, ...rest} = e;
     batch.set(db.collection('events').doc(id), rest);
   });
   await batch.commit();
-  // equipment — 배치 업로드
   batch = db.batch();
   INIT_EQ.forEach(e => {
     const {id, ...rest} = e;
@@ -690,7 +755,6 @@ async function seedData(){
   });
   await batch.commit();
 }
-
 // ════════════════════════════════════════
 //  ROUTING
 // ════════════════════════════════════════
@@ -704,16 +768,11 @@ function go(page, pushState=true){
   window.scrollTo(0,0);
   if(pushState) history.pushState({page}, '', '#'+page);
 }
-
-// 브라우저 뒤로가기 지원
 window.addEventListener('popstate', e => {
   const page = e.state?.page || 'home';
   go(page, false);
 });
-
-// 초기 state 설정
 history.replaceState({page:'home'}, '', '#home');
-
 // ════════════════════════════════════════
 //  SCHEDULE
 // ════════════════════════════════════════
@@ -725,8 +784,21 @@ function renderSchedFilters(){
       onclick="setSchedF('${p.id}')">${p.label}</button>`).join('');
 }
 function setSchedF(f){ schedF=f; renderSchedFilters(); renderCal(); renderEvList(); }
+function setSchedView(v){
+  schedView = v;
+  selDate = null;
+  document.querySelectorAll('#sched-view-tabs .vtab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===v);
+  });
+  // 오늘 일정 누르면 자동으로 오늘 달로 이동
+  if(v==='today'){
+    const t=new Date();
+    calY=t.getFullYear(); calM=t.getMonth();
+  }
+  renderCal();
+  renderEvList();
+}
 function renderSched(){ renderSchedFilters(); renderCal(); renderEvList(); }
-
 function filtEvForPerson(){
   if(schedF==='all') return events;
   return events.filter(e => {
@@ -734,7 +806,6 @@ function filtEvForPerson(){
     return ps.includes(schedF) || ps.includes('전체');
   });
 }
-
 function renderCal(){
   const MO=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('cal-label').textContent=`${calY}년 ${MO[calM]}`;
@@ -752,14 +823,37 @@ function renderCal(){
     const de=byD[ds]||[];
     const it=today.getFullYear()===calY&&today.getMonth()===calM&&today.getDate()===d;
     const dots=de.slice(0,4).map(e=>{const ps=Array.isArray(e.person)?e.person:[e.person];return`<span class="edot" style="background:${PERSON_COLOR[ps[0]]||'#8e8e93'}"></span>`;}).join('');
-    h+=`<div class="cal-day${it?' today':''}" onclick="selDay('${ds}',this)"><span class="dn" onclick="event.stopPropagation();selDate='${ds}';openEvModal()" title="탭하여 일정 추가">${d}</span><div class="edots">${dots}</div></div>`;
+    h+=`<div class="cal-day${it?' today':''}${selDate===ds?' sel':''}" onclick="selDay('${ds}',this)"><span class="dn" onclick="event.stopPropagation();selDate='${ds}';openEvModal()" title="탭하여 일정 추가">${d}</span><div class="edots">${dots}</div></div>`;
   }
   const total=Math.ceil((fd+dim)/7)*7;
   for(let d=1;d<=total-fd-dim;d++) h+=`<div class="cal-day other-mo"><span class="dn">${d}</span></div>`;
   document.getElementById('cal-days').innerHTML=h;
 }
-let selDate = null;
-function chMon(d){ calM+=d; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;} renderCal(); renderEvList(); }
+function chMon(d){
+  calM+=d;
+  if(calM<0){calM=11;calY--;}
+  if(calM>11){calM=0;calY++;}
+  selDate = null;
+  renderCal();
+  renderEvList();
+}
+function goToToday(){
+  const t = new Date();
+  calY = t.getFullYear();
+  calM = t.getMonth();
+  const ds = `${calY}-${String(calM+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  selDate = ds;
+  // month 뷰 + 오늘 날짜 선택 시각화
+  schedView = 'month';
+  document.querySelectorAll('#sched-view-tabs .vtab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view==='month');
+  });
+  renderCal();
+  // 오늘 날짜 일정만 렌더
+  const de = filtEvForPerson().filter(e => e.date === ds);
+  renderEvList(de, ds);
+  toast(`📍 오늘 (${fmtD(ds)})`);
+}
 function selDay(ds, el){
   document.querySelectorAll('.cal-day').forEach(c=>c.classList.remove('sel'));
   el && el.classList.add('sel');
@@ -767,17 +861,29 @@ function selDay(ds, el){
   const de=filtEvForPerson().filter(e=>e.date===ds);
   renderEvList(de,ds);
 }
-function renderEvList(items,ds){
-  const lbl=document.getElementById('el-label');
-  const cnt=document.getElementById('el-count');
+function renderEvList(items, ds){
+  const lbl = document.getElementById('el-label');
+  const cnt = document.getElementById('el-count');
   if(!items){
-    const ym=`${calY}-${String(calM+1).padStart(2,'0')}`;
-    items=filtEvForPerson().filter(e=>e.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
-    lbl.textContent=`${calY}년 ${calM+1}월 일정`;
-  } else { lbl.textContent=ds?fmtD(ds)+' 일정':''; }
-  cnt.textContent=`${items.length}건`;
-  const c=document.getElementById('sched-evlist');
-  c.innerHTML=items.length?items.map(e=>evHTML(e)).join(''):'<div class="empty">일정이 없습니다</div>';
+    let pool = filtEvForPerson();
+    if(schedView === 'today'){
+      const todayStr = new Date().toISOString().slice(0,10);
+      items = pool.filter(e => e.date === todayStr).sort((a,b)=>a.date.localeCompare(b.date));
+      lbl.textContent = `오늘 일정 · ${fmtD(todayStr)}`;
+    } else if(schedView === 'all'){
+      items = [...pool].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+      lbl.textContent = '전체 일정';
+    } else {
+      const ym = `${calY}-${String(calM+1).padStart(2,'0')}`;
+      items = pool.filter(e => e.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
+      lbl.textContent = `${calY}년 ${calM+1}월 일정`;
+    }
+  } else {
+    lbl.textContent = ds ? fmtD(ds)+' 일정' : '';
+  }
+  cnt.textContent = `${items.length}건`;
+  const c = document.getElementById('sched-evlist');
+  c.innerHTML = items.length ? items.map(e=>evHTML(e)).join('') : '<div class="empty">일정이 없습니다</div>';
 }
 function evHTML(e){
   const sc={완료:'es-done','진행 중':'es-prog','시작 전':'es-todo'};
@@ -798,7 +904,6 @@ function evHTML(e){
     <div class="ev-status ${sc[e.status]||'es-todo'}">${x(e.status)}</div>
   </div>`;
 }
-
 // ════════════════════════════════════════
 //  EQUIPMENT
 // ════════════════════════════════════════
@@ -811,7 +916,6 @@ const EQ_GROUPS=[
   {id:'car',    name:'차량',     ico:'🚗', color:'#ef5350', types:['Car']},
 ];
 function eqGroup(type){ return EQ_GROUPS.find(g=>g.types.includes(type))||EQ_GROUPS[0]; }
-
 function renderEq(){
   const q=(document.getElementById('eq-search')?.value||'').toLowerCase();
   document.getElementById('eq-filters').innerHTML=
@@ -860,7 +964,6 @@ function eqRow(e){
   </div>`;
 }
 function setEqF(t){ eqF=t; renderEq(); }
-
 // ════════════════════════════════════════
 //  EXPORTS
 // ════════════════════════════════════════
@@ -877,16 +980,20 @@ function renderExp(){
       <button class="del-btn" onclick="event.stopPropagation();delExp('${e.id}')">삭제</button>
     </div>`).join(''):'<div class="empty">반출 내역이 없습니다</div>';
 }
-
 // ════════════════════════════════════════
 //  FILMOGRAPHY
 // ════════════════════════════════════════
+const OTT_CLASS = {
+  'Netflix':'ott-netflix','Disney+':'ott-disney','Wavve':'ott-wavve',
+  'Tving':'ott-tving','Coupang Play':'ott-coupang','Apple TV+':'ott-apple',
+  'YouTube':'ott-youtube','극장 개봉':'ott-theater',
+  'KBS':'ott-kbs','SBS':'ott-sbs','MBC':'ott-mbc','tvN':'ott-tvn','JTBC':'ott-jtbc'
+};
 function renderFilmo(){
   document.getElementById('filmo-tabs').innerHTML=
     PEOPLE.map(p=>`<button class="filmo-tab${filmoP===p?' active':''}" onclick="setFilmoP('${p}')">${p}</button>`).join('');
   const items=(filmo[filmoP]||[]).sort((a,b)=>(b.year||0)-(a.year||0));
   const c=document.getElementById('filmo-list');
-  const OTT_CLASS={'Netflix':'ott-netflix','Disney+':'ott-disney','Wavve':'ott-wavve','Tving':'ott-tving','Coupang Play':'ott-coupang','Apple TV+':'ott-apple','YouTube':'ott-youtube','극장 개봉':'ott-theater'};
   c.innerHTML=items.length?items.map(f=>`
     <div class="filmo-item" onclick="openFilmoModal('${f.id}')">
       <span class="filmo-year-badge">${f.year||'—'}</span>
@@ -900,7 +1007,6 @@ function renderFilmo(){
     </div>`).join(''):`<div class="empty">${filmoP}의 필모그래피가 없습니다<br><small>+ 추가 버튼으로 작품을 등록하세요</small></div>`;
 }
 function setFilmoP(p){ filmoP=p; renderFilmo(); }
-
 // ════════════════════════════════════════
 //  MODALS
 // ════════════════════════════════════════
@@ -909,7 +1015,6 @@ function closeAll(){
   editEvId=null; editEqId=null; editFilmoId=null;
 }
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeAll();}));
-
 // — Event modal —
 function openEvModal(id){
   editEvId=id||null;
@@ -942,7 +1047,6 @@ async function deleteEv(){
   await db.collection('events').doc(editEvId).delete();
   closeAll(); toast('삭제됐습니다');
 }
-
 // — Equipment modal —
 function openEqModal(id){
   editEqId=id||null;
@@ -977,7 +1081,6 @@ async function deleteEq(){
   await db.collection('equipment').doc(editEqId).delete();
   closeAll(); toast('삭제됐습니다');
 }
-
 // — Export modal —
 function openExpModal(){
   document.getElementById('exp-equip').value='';
@@ -1001,7 +1104,6 @@ async function delExp(id){
   if(!confirm('삭제?'))return;
   await db.collection('exports').doc(id).delete();
 }
-
 // — Filmography modal —
 function openFilmoModal(id){
   editFilmoId=id||null;
@@ -1042,7 +1144,6 @@ async function deleteFilmo(){
   await db.collection('filmography').doc(filmoP).set({films:list});
   closeAll(); toast('삭제됐습니다');
 }
-
 // ════════════════════════════════════════
 //  HELPERS
 // ════════════════════════════════════════
