@@ -337,6 +337,7 @@ input,select,textarea{font-family:inherit}
 <body>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <div id="app-root">
 <div class="page active" id="pg-home">
   <div class="home-hero">
@@ -514,28 +515,6 @@ input,select,textarea{font-family:inherit}
         <option value="진행 중">진행 중</option>
         <option value="완료">완료</option>
       </select>
-    </div>
-    <!-- 알림 설정 -->
-    <div class="toggle-wrap" id="ev-notif-wrap">
-      <div class="toggle-label">
-        🔔 알림 받기
-        <small>일정 당일 오전 9시에 알림</small>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="ev-notify" onchange="toggleNotifTime()">
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
-    </div>
-    <div class="fg" id="ev-notif-time-row" style="display:none">
-      <label class="fl">알림 시각</label>
-      <div class="notif-time-row" id="ev-notif-chips">
-        <button type="button" class="ntchip active" data-min="0" onclick="selNotifChip(this)">당일 09:00</button>
-        <button type="button" class="ntchip" data-min="-1440" onclick="selNotifChip(this)">하루 전 09:00</button>
-        <button type="button" class="ntchip" data-min="-2880" onclick="selNotifChip(this)">이틀 전 09:00</button>
-        <button type="button" class="ntchip" data-min="custom" onclick="selNotifChip(this)">직접 입력</button>
-      </div>
-      <input class="fi" id="ev-notif-custom" type="time" value="09:00" style="margin-top:8px;display:none">
     </div>
     <div class="f-actions">
       <button class="f-del" id="ev-del-btn" onclick="deleteEv()" style="display:none">삭제</button>
@@ -1265,14 +1244,6 @@ function openEvModal(id){
   document.getElementById('ev-loc').value=e?.location||'';
   document.getElementById('ev-status').value=e?.status||'시작 전';
   document.getElementById('ev-del-btn').style.display=e?'':'none';
-  // 알림 설정 UI
-  const notifWrap=document.getElementById('ev-notif-wrap');
-  if(Notification.permission==='denied'){
-    notifWrap.style.opacity='.4'; notifWrap.style.pointerEvents='none';
-  } else {
-    notifWrap.style.opacity=''; notifWrap.style.pointerEvents='';
-  }
-  setEvNotifyUI(e);
   document.getElementById('ev-overlay').classList.add('show');
 }
 
@@ -1288,7 +1259,6 @@ function copyEv(id){
   document.getElementById('ev-loc').value=e.location||'';
   document.getElementById('ev-status').value='시작 전';
   document.getElementById('ev-del-btn').style.display='none';
-  setEvNotifyUI(null);
   document.getElementById('ev-overlay').classList.add('show');
 }
 
@@ -1297,41 +1267,21 @@ async function saveEv(){
   const date=document.getElementById('ev-date').value;
   if(!name||!date){toast('제목과 날짜를 입력해주세요');return;}
   const persons=getChipPersons();
-  const nd=getEvNotifyData(date);
   const d={name,date,person:persons.length===1?persons[0]:persons,
     location:document.getElementById('ev-loc').value.trim(),
-    status:document.getElementById('ev-status').value,
-    notify:nd.notify, notifyAt:nd.notifyAt||null};
+    status:document.getElementById('ev-status').value};
   try{
-    let savedId;
     if(editEvId){
       await db.collection('events').doc(editEvId).update(d);
-      savedId=editEvId;
-      if(!nd.notify) sendToSW('CANCEL',{id:editEvId});
     } else {
-      const ref=await db.collection('events').add(d);
-      savedId=ref.id;
+      await db.collection('events').add(d);
     }
-    if(nd.notify&&nd.notifyAt){
-      if(Notification.permission==='granted'){
-        scheduleNotif({id:savedId,...d});
-        toast('✅ 저장됐습니다 · 알림 예약됨 🔔');
-      } else {
-        // 권한 요청
-        Notification.requestPermission().then(p=>{
-          if(p==='granted') scheduleNotif({id:savedId,...d});
-        });
-        toast('✅ 저장됐습니다');
-      }
-    } else {
-      toast('✅ 저장됐습니다');
-    }
+    toast('✅ 저장됐습니다');
     closeAll();
   }catch(e){toast('오류: '+e.message);}
 }
 async function deleteEv(){
   if(!editEvId||!confirm('삭제하시겠습니까?'))return;
-  sendToSW('CANCEL',{id:editEvId});
   await db.collection('events').doc(editEvId).delete();
   closeAll(); toast('삭제됐습니다');
 }
@@ -1441,20 +1391,94 @@ async function deleteFilmo(){
 //  PWA — SERVICE WORKER 등록
 // ════════════════════════════════════════
 if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', {scope:'./'})
-      .then(reg => {
-        console.log('[SW] registered', reg.scope);
-        window._swReg = reg;
-      })
-      .catch(err => console.warn('[SW] register failed', err));
+  window.addEventListener('load', async () => {
+    try {
+      // PWA 캐시 서비스 워커
+      await navigator.serviceWorker.register('./sw.js', {scope:'./'});
+      console.log('[SW] registered');
+
+      // FCM 전용 서비스 워커 (반드시 루트 스코프)
+      await navigator.serviceWorker.register('./firebase-messaging-sw.js', {scope:'./'});
+      console.log('[FCM-SW] registered');
+
+      // FCM 초기화
+      initFCM();
+
+      // 이미 권한이 있으면 바로 토큰 등록
+      if(Notification.permission === 'granted'){
+        await registerFCMToken();
+      }
+
+      // 알림 배너 렌더링
+      renderNotifBanner();
+    } catch(err) {
+      console.warn('[SW] register failed', err);
+      renderNotifBanner();
+    }
   });
 }
 
 // ════════════════════════════════════════
-//  🔔 NOTIFICATION SYSTEM
+//  🔔 FCM PUSH NOTIFICATION SYSTEM
+//  다른 사람이 일정을 수정하면 오프라인도 알림
 // ════════════════════════════════════════
-const NOTIF_KEY = 'mbsu-notif-scheduled'; // localStorage key
+
+// ── VAPID 공개 키 ──────────────────────────
+// Firebase Console > 프로젝트 설정 > 클라우드 메시징 >
+// 웹 푸시 인증서 > 키 쌍 생성 후 아래에 붙여넣기
+const VAPID_KEY = 'YOUR_VAPID_KEY_HERE';
+
+let _messaging = null;
+
+// FCM 초기화 (SW 등록 후 호출)
+function initFCM(){
+  try {
+    _messaging = firebase.messaging();
+    // 포그라운드 메시지 수신 처리
+    _messaging.onMessage(payload => {
+      const { title, body } = payload.notification || {};
+      toast(`🔔 ${title||'알림'}: ${body||''}`);
+      // 포그라운드에서는 Notification API로도 표시
+      if(Notification.permission === 'granted'){
+        new Notification(title || 'MBSU Prod', {
+          body: body || '',
+          icon: './icon-192.png',
+          badge: './icon-192.png',
+          tag: payload.data?.eventId || 'mbsu-fg',
+          vibrate: [200, 100, 200]
+        });
+      }
+    });
+  } catch(e) {
+    console.warn('[FCM] init failed', e);
+  }
+}
+
+// FCM 토큰 등록 및 Firestore 저장
+async function registerFCMToken(){
+  if(!_messaging) return;
+  try {
+    const token = await _messaging.getToken({ vapidKey: VAPID_KEY });
+    if(!token){ console.warn('[FCM] no token'); return; }
+    await db.collection('fcm_tokens').doc(token).set({
+      createdAt: Date.now(),
+      ua: navigator.userAgent.slice(0, 120)
+    });
+    console.log('[FCM] token registered');
+  } catch(e) {
+    console.warn('[FCM] getToken failed', e);
+  }
+}
+
+// 알림 권한 요청 + FCM 등록
+async function requestNotifPerm(){
+  const result = await Notification.requestPermission();
+  renderNotifBanner();
+  if(result === 'granted'){
+    await registerFCMToken();
+    toast('✅ 알림이 활성화됐습니다 🔔');
+  }
+}
 
 // 배너 렌더링
 function renderNotifBanner(){
@@ -1468,15 +1492,15 @@ function renderNotifBanner(){
   if(perm === 'denied'){
     el.innerHTML=`<div class="notif-banner">
       <span class="notif-banner-ico">🔕</span>
-      <span class="notif-banner-txt">알림이 차단되어 있습니다.<br>브라우저 설정에서 허용해 주세요.</span>
+      <span class="notif-banner-txt">알림이 차단됐습니다.<br>브라우저 설정에서 허용해 주세요.</span>
       <button class="notif-banner-x" onclick="this.closest('.notif-banner').remove()">✕</button>
     </div>`;
     return;
   }
-  // default — 허용 요청 배너
+  if(localStorage.getItem('mbsu-notif-dismissed')) return;
   el.innerHTML=`<div class="notif-banner">
     <span class="notif-banner-ico">🔔</span>
-    <span class="notif-banner-txt"><strong>일정 알림 받기</strong><br>촬영 일정 전에 알림을 받을 수 있어요.</span>
+    <span class="notif-banner-txt"><strong>팀 일정 알림 받기</strong><br>다른 팀원이 일정을 수정하면 알림이 와요.</span>
     <button class="notif-banner-btn" onclick="requestNotifPerm()">허용</button>
     <button class="notif-banner-x" onclick="dismissNotifBanner()">✕</button>
   </div>`;
@@ -1486,87 +1510,6 @@ function dismissNotifBanner(){
   localStorage.setItem('mbsu-notif-dismissed','1');
   const el=document.getElementById('notif-banner');
   if(el) el.innerHTML='';
-}
-
-async function requestNotifPerm(){
-  const result = await Notification.requestPermission();
-  renderNotifBanner();
-  if(result === 'granted'){
-    toast('✅ 알림이 허용됐습니다');
-    // 기존 저장된 일정들 다시 스케줄
-    scheduleAllNotifs();
-  }
-}
-
-// 알림 모달 UI 컨트롤
-function toggleNotifTime(){
-  const on = document.getElementById('ev-notify').checked;
-  document.getElementById('ev-notif-time-row').style.display = on ? '' : 'none';
-}
-function selNotifChip(btn){
-  document.querySelectorAll('#ev-notif-chips .ntchip').forEach(c=>c.classList.remove('active'));
-  btn.classList.add('active');
-  const custom = document.getElementById('ev-notif-custom');
-  custom.style.display = btn.dataset.min === 'custom' ? '' : 'none';
-}
-
-// 알림 fire 시각 계산 (epoch ms)
-function calcNotifTime(dateStr){
-  const chip = document.querySelector('#ev-notif-chips .ntchip.active');
-  if(!chip) return null;
-  const base = new Date(dateStr+'T09:00:00');
-  if(chip.dataset.min === 'custom'){
-    const t = document.getElementById('ev-notif-custom').value || '09:00';
-    const [hh,mm] = t.split(':').map(Number);
-    base.setHours(hh,mm,0,0);
-    return base.getTime();
-  }
-  const offset = parseInt(chip.dataset.min) || 0; // minutes
-  return base.getTime() + offset * 60000;
-}
-
-// 서비스 워커에 알림 예약 메시지 전송
-function sendToSW(type, payload){
-  if(!navigator.serviceWorker?.controller) return;
-  navigator.serviceWorker.controller.postMessage({type, ...payload});
-}
-
-// 단일 이벤트 알림 스케줄
-function scheduleNotif(ev){
-  if(!ev.notify || !ev.notifyAt || Notification.permission !== 'granted') return;
-  const delay = ev.notifyAt - Date.now();
-  if(delay < 0) return; // 지난 시각
-  sendToSW('SCHEDULE', {
-    id: ev.id,
-    title: `📅 ${ev.name}`,
-    body: [ev.location ? '📍'+ev.location : '', ev.date ? fmtD(ev.date) : ''].filter(Boolean).join('  '),
-    fireAt: ev.notifyAt
-  });
-}
-
-// 전체 이벤트 일괄 스케줄
-function scheduleAllNotifs(){
-  if(Notification.permission !== 'granted') return;
-  events.filter(e => e.notify && e.notifyAt).forEach(scheduleNotif);
-}
-
-// ── 모달 open/save에서 사용 ───────────────
-function getEvNotifyData(dateStr){
-  const on = document.getElementById('ev-notify').checked;
-  if(!on) return {notify:false, notifyAt:null};
-  const at = calcNotifTime(dateStr);
-  return {notify:true, notifyAt:at};
-}
-function setEvNotifyUI(ev){
-  const cb = document.getElementById('ev-notify');
-  cb.checked = !!ev?.notify;
-  toggleNotifTime();
-  // chip 복원
-  if(ev?.notifyAt){
-    const chips = document.querySelectorAll('#ev-notif-chips .ntchip');
-    chips.forEach(c=>c.classList.remove('active'));
-    chips[0].classList.add('active'); // default 당일
-  }
 }
 
 // ════════════════════════════════════════
