@@ -1273,8 +1273,10 @@ async function saveEv(){
   try{
     if(editEvId){
       await db.collection('events').doc(editEvId).update(d);
+      notifyWorker('✏️ 일정 수정됨', `${name} (${date})`, 'event_update', editEvId);
     } else {
-      await db.collection('events').add(d);
+      const ref=await db.collection('events').add(d);
+      notifyWorker('📅 새 일정 추가됨', `${name} (${date})`, 'event_create', ref.id);
     }
     toast('✅ 저장됐습니다');
     closeAll();
@@ -1282,8 +1284,20 @@ async function saveEv(){
 }
 async function deleteEv(){
   if(!editEvId||!confirm('삭제하시겠습니까?'))return;
+  const ev=events.find(v=>v.id===editEvId);
   await db.collection('events').doc(editEvId).delete();
+  notifyWorker('🗑 일정 삭제됨', ev?.name||'일정', 'event_delete', editEvId);
   closeAll(); toast('삭제됐습니다');
+}
+
+// ── Cloudflare Worker 알림 호출 ──────────
+const WORKER_URL = 'https://mbsu-notif.jjm3570.workers.dev';
+function notifyWorker(title, body, type, eventId){
+  fetch(WORKER_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({title, body, type, eventId: eventId||''})
+  }).catch(()=>{});
 }
 
 // — Equipment modal —
