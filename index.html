@@ -601,8 +601,7 @@ input,select,textarea{font-family:inherit}
       <span class="modal-title" id="exp-modal-title">반출 추가</span>
       <button class="modal-x" onclick="closeAll()">✕</button>
     </div>
-    <div class="fg"><label class="fl">장비명</label><input class="fi" id="exp-equip" type="text" placeholder="장비명" list="eq-names-list" autocomplete="off"></div>
-    <datalist id="eq-names-list"></datalist>
+    <div class="fg"><label class="fl">장비 선택</label><select class="fsel" id="exp-equip"></select></div>
     <div class="fg"><label class="fl">반출 날짜</label><input class="fi" id="exp-date" type="date"></div>
     <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..."></div>
     <div class="fg"><label class="fl">수량</label><input class="fi" id="exp-qty" type="number" placeholder="수량"></div>
@@ -1035,15 +1034,14 @@ async function setupListeners(){
   }));
   _unsubs.push(db.collection('equipment').onSnapshot(snap=>{
     equip=snap.docs.map(d=>({id:d.id,...d.data()}));
-    // 반출 모달 자동완성 목록 갱신
-    const dl=document.getElementById('eq-names-list');
-    if(dl) dl.innerHTML=equip.map(q=>`<option value="${x(q.name)}">`).join('');
     if(isActive('equipment')) renderEq();
   }));
   _unsubs.push(db.collection('exports').onSnapshot(snap=>{
     exports_=snap.docs.map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     if(isActive('exports')) renderExp();
+    // 반출중 배지가 장비 목록에도 표시되므로 같이 갱신
+    if(isActive('equipment')) renderEq();
   }));
   _unsubs.push(db.collection('filmography').onSnapshot(snap=>{
     filmo={};
@@ -1589,24 +1587,31 @@ function openExpModal(id){
   editExpId=id||null;
   const e=id?exports_.find(v=>v.id===id):null;
   document.getElementById('exp-modal-title').textContent=e?'반출 수정':'반출 추가';
-  document.getElementById('exp-equip').value=e?.equip||'';
+  // 장비 드롭다운 구성 (종류별 그룹)
+  const sel=document.getElementById('exp-equip');
+  const sorted=[...equip].sort((a,b)=>(a.types?.[0]||'').localeCompare(b.types?.[0]||'')||(a.name||'').localeCompare(b.name||''));
+  let lastType='', html='<option value="">— 장비 선택 —</option>';
+  sorted.forEach(q=>{
+    const t=q.types?.[0]||'기타';
+    if(t!==lastType){ if(lastType) html+='</optgroup>'; html+=`<optgroup label="${t}">`; lastType=t; }
+    html+=`<option value="${q.id}"${e?.equipId===q.id?' selected':''}>${x(q.name)}${q.company?' ('+x(q.company)+')':''}</option>`;
+  });
+  if(lastType) html+='</optgroup>';
+  sel.innerHTML=html;
   document.getElementById('exp-date').value=e?.date||new Date().toISOString().slice(0,10);
   document.getElementById('exp-dest').value=e?.dest||'';
   document.getElementById('exp-qty').value=e?.qty||'';
   document.getElementById('exp-del-btn').style.display=e?'':'none';
-  // 장비명 자동완성 목록 갱신
-  const dl=document.getElementById('eq-names-list');
-  dl.innerHTML=equip.map(q=>`<option value="${x(q.name)}">`).join('');
   document.getElementById('exp-overlay').classList.add('show');
 }
 async function saveExp(){
-  const eq=document.getElementById('exp-equip').value.trim();
-  if(!eq){toast('장비명을 입력해주세요');return;}
-  const matched=equip.find(q=>q.name.toLowerCase()===eq.toLowerCase());
-  const equipId=matched?.id||(editExpId?exports_.find(v=>v.id===editExpId)?.equipId:null)||null;
+  const sel=document.getElementById('exp-equip');
+  const equipId=sel.value||null;
+  if(!equipId){toast('장비를 선택해주세요');return;}
+  const eqItem=equip.find(q=>q.id===equipId);
   const d={
-    equip:eq,
-    equipId:equipId,
+    equip:eqItem?.name||'',
+    equipId,
     date:document.getElementById('exp-date').value,
     dest:document.getElementById('exp-dest').value.trim(),
     qty:document.getElementById('exp-qty').value||null
