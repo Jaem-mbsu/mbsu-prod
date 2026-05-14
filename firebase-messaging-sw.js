@@ -3,28 +3,41 @@
 //  PWA 캐싱 + FCM 푸시 수신
 // ════════════════════════════════════════
 
-// ── FCM 백그라운드 푸시 수신 ──────────────
-// Firebase SDK 없이 브라우저 기본 push 이벤트로 직접 처리
-// → SDK가 push를 가로채는 문제 없이 안정적으로 동작
+// Firebase import — getToken() 동작에 필요
+importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey:            "AIzaSyCi6trZA-DI3z2hLvUgshTcYMaLWNxo4b4",
+  authDomain:        "mbsu-prod.firebaseapp.com",
+  projectId:         "mbsu-prod",
+  storageBucket:     "mbsu-prod.firebasestorage.app",
+  messagingSenderId: "899152711355",
+  appId:             "1:899152711355:web:c94ff0b41f4b2810c1639e"
+});
+
+// messaging 인스턴스 생성 (getToken 연동용)
+// onBackgroundMessage 등록 안 함 → 아래 push 이벤트에서 직접 처리
+firebase.messaging();
+
+// ── 백그라운드 푸시 수신 (raw push event) ─
+// data-only 메시지이므로 Firebase SDK가 자동 표시 안 함
+// 여기서 1번만 처리
 self.addEventListener('push', event => {
   if (!event.data) return;
-
   let payload;
   try { payload = event.data.json(); } catch(e) { return; }
 
-  // webpush.notification 또는 data 필드에서 제목/내용 추출
-  const n = (payload.notification) || {};
   const d = payload.data || {};
-  const title   = n.title   || d.title   || 'MBSU Prod';
-  const body    = n.body    || d.body    || '';
+  const title   = d.title   || 'MBSU Prod';
+  const body    = d.body    || '';
   const eventId = d.eventId || '';
 
   event.waitUntil(
-    // 포그라운드 탭이 있으면 OS 알림 생략 (앱 내 토스트로 처리)
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
         const hasFocus = clients.some(c => c.visibilityState === 'visible');
-        if (hasFocus) return;
+        if (hasFocus) return; // 앱 열려있음 → onMessage 토스트가 처리
         return self.registration.showNotification(title, {
           body,
           icon:    './icon-192.png',
