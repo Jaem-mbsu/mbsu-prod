@@ -19,22 +19,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ── 백그라운드 FCM 메시지 → 알림 표시 ────
-// data-only 메시지 사용 — 브라우저 자동 표시 없이 여기서만 1번 처리
-messaging.onBackgroundMessage(payload => {
-  const d = payload.data || {};
-  const notifTitle = d.title || 'MBSU Prod';
-  const tag = d.eventId ? 'mbsu-' + d.eventId : 'mbsu-update';
-  return self.registration.showNotification(notifTitle, {
-    body:    d.body  || '',
-    icon:    './icon-192.png',
-    badge:   './icon-192.png',
-    tag,
-    data:    d,
-    vibrate: [200, 100, 200],
-    requireInteraction: false
-  });
-});
+// ── 백그라운드 알림 ────────────────────────
+// webpush.notification 필드를 사용하므로
+// 브라우저가 자동으로 1번만 표시 → onBackgroundMessage 불필요
+// (등록하면 중복 발생하므로 제거)
 
 // ── PWA 캐시 ─────────────────────────────
 // ※ push 이벤트 리스너 없음 — Firebase SDK(onBackgroundMessage)가 처리
