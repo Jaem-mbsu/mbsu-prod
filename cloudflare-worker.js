@@ -19,7 +19,7 @@ export default {
       return new Response('Method Not Allowed', { status: 405 });
     }
     try {
-      const { title, body, type, eventId } = await request.json();
+      const { title, body, type, eventId, targetToken } = await request.json();
 
       // 환경변수 확인
       if (!env.FIREBASE_SA) throw new Error('FIREBASE_SA not set');
@@ -28,8 +28,8 @@ export default {
       // 1. 서비스 계정으로 액세스 토큰 발급
       const accessToken = await getAccessToken(env.FIREBASE_SA);
 
-      // 2. Firestore에서 FCM 토큰 목록 읽기
-      const tokens = await getFCMTokens(env.PROJECT_ID, accessToken);
+      // 2. 토큰 목록 (targetToken 지정 시 그것만, 없으면 Firestore 전체)
+      const tokens = targetToken ? [targetToken] : await getFCMTokens(env.PROJECT_ID, accessToken);
       if (!tokens.length) return jsonResponse({ ok: true, sent: 0 });
 
       // 3. FCM 푸시 병렬 발송 (순차→병렬로 변경해 응답 시간 단축)
@@ -165,15 +165,18 @@ async function sendFCM(token, projectId, fcmToken, title, body, type, eventId) {
       body: JSON.stringify({
         message: {
           token: fcmToken,
-          notification: { title, body },
+          // webpush.notification만 사용 — 브라우저가 백그라운드에서 자동 1번 표시
+          // notification 필드(최상위) 없음 → onBackgroundMessage 호출 안 됨 → 중복 방지
           data: { type: type || '', eventId: eventId || '' },
           webpush: {
             notification: {
-              title, body,
-              icon:  'https://mbsu-prod.github.io/mbsu-prod/icon-192.png',
-              badge: 'https://mbsu-prod.github.io/mbsu-prod/icon-192.png'
-            },
-            fcmOptions: { link: 'https://mbsu-prod.github.io/mbsu-prod/' }
+              title: title || 'MBSU Prod',
+              body:  body  || '',
+              icon:  'https://mbsu-prod.firebaseapp.com/icon-192.png',
+              badge: 'https://mbsu-prod.firebaseapp.com/icon-192.png',
+              tag:   eventId ? 'mbsu-' + eventId : 'mbsu-update'
+            }
+            // fcmOptions.link 제거 → SW의 notificationclick 핸들러가 직접 앱 열기 처리
           }
         }
       })

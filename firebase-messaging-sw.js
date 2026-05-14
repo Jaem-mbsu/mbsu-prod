@@ -18,17 +18,40 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // ── 백그라운드 알림 처리 ──────────────────
-// Worker가 webpush.notification으로 보내면
-// Firebase SDK가 백그라운드에서 자동으로 OS 알림 1개 표시
-// → onBackgroundMessage 등록 불필요 (등록하면 중복 발생)
-//
+// webpush.notification → Firebase SDK가 OS 알림 자동 1회 표시
+// onBackgroundMessage → showNotification 호출 없이 IndexedDB에만 저장
+// (showNotification 호출하면 중복 발생 → 절대 호출 금지)
+messaging.onBackgroundMessage(payload => {
+  const n = payload.notification || {};
+  const d = payload.data || {};
+  _saveNotifToIDB({
+    title:   n.title  || d.title   || 'MBSU Prod',
+    body:    n.body   || d.body    || '',
+    eventId: d.eventId || '',
+    time:    Date.now()
+  });
+  // showNotification 호출 없음 — webpush.notification이 이미 표시함
+});
+
+function _saveNotifToIDB(notif){
+  const req = indexedDB.open('mbsu-notifs', 1);
+  req.onupgradeneeded = e => {
+    e.target.result.createObjectStore('pending', { autoIncrement: true });
+  };
+  req.onsuccess = e => {
+    const idb = e.target.result;
+    idb.transaction('pending','readwrite').objectStore('pending').add(notif);
+  };
+}
+
 // 포그라운드는 main app의 onMessage에서 토스트로 처리
 
 // ── 알림 클릭 → 앱 열기 + 히스토리 저장 ──
+// Firebase SDK의 fcmOptions.link 핸들러와 충돌하지 않도록
+// cloudflare-worker.js에서 fcmOptions.link 제거 필수
 self.addEventListener('notificationclick', event => {
   const notif = event.notification;
   const data = notif.data || {};
-  // title/body는 notification 객체에서 가져옴 (data 필드에 없음)
   const payload = {
     title:   notif.title || data.title || 'MBSU Prod',
     body:    notif.body  || data.body  || '',
@@ -36,18 +59,24 @@ self.addEventListener('notificationclick', event => {
     type:    data.type   || ''
   };
   notif.close();
+
+  const scope = self.registration.scope; // e.g. https://mbsu-prod.firebaseapp.com/
+  const targetUrl = payload.eventId
+    ? scope + '?notif=' + encodeURIComponent(payload.eventId)
+    : scope;
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      const target = clients.length ? clients[0] : null;
-      if (target) {
-        target.postMessage({ type: 'NOTIF_CLICKED', data: payload });
-        return target.focus();
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
+      // 이미 열려있는 앱 창 찾기
+      for (const c of clients) {
+        if (c.url.startsWith(scope)) {
+          c.postMessage({ type: 'NOTIF_CLICKED', data: payload });
+          try { await c.focus(); } catch(e) {}
+          return;
+        }
       }
-      // 앱이 닫혀있을 때 → eventId를 URL 파라미터로 담아 열기
-      const url = payload.eventId
-        ? './?notif=' + encodeURIComponent(payload.eventId)
-        : './';
-      return self.clients.openWindow(url);
+      // 열려있는 창 없으면 새로 열기
+      return self.clients.openWindow(targetUrl);
     })
   );
 });
