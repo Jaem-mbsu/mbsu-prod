@@ -20,27 +20,19 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // ── 백그라운드 FCM 메시지 → 알림 표시 ────
-// renotify:false + 고정 tag로 중복 알림 방지 (같은 tag는 덮어씀)
+// data-only 메시지 사용 — 브라우저 자동 표시 없이 여기서만 1번 처리
 messaging.onBackgroundMessage(payload => {
-  const { title, body, icon } = payload.notification || {};
-  const notifTitle = title || 'MBSU Prod';
-  const tag = (payload.data && payload.data.eventId)
-    ? 'mbsu-' + payload.data.eventId
-    : 'mbsu-update';
-  const notifOptions = {
-    body:    body  || '',
-    icon:    icon  || './icon-192.png',
-    badge:        './icon-192.png',
+  const d = payload.data || {};
+  const notifTitle = d.title || 'MBSU Prod';
+  const tag = d.eventId ? 'mbsu-' + d.eventId : 'mbsu-update';
+  return self.registration.showNotification(notifTitle, {
+    body:    d.body  || '',
+    icon:    './icon-192.png',
+    badge:   './icon-192.png',
     tag,
-    renotify:     false,
-    data:         payload.data || {},
-    vibrate:      [200, 100, 200],
+    data:    d,
+    vibrate: [200, 100, 200],
     requireInteraction: false
-  };
-  // 같은 tag 알림이 이미 있으면 닫고 새로 표시
-  return self.registration.getNotifications({ tag }).then(existing => {
-    existing.forEach(n => n.close());
-    return self.registration.showNotification(notifTitle, notifOptions);
   });
 });
 
