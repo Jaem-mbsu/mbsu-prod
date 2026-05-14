@@ -1737,19 +1737,38 @@ function clearAllNotifHistory(){
 // ── 알림 ON/OFF 토글 ──────────────────────
 async function handleNotifToggle(on){
   const sub = document.getElementById('notif-toggle-sub');
+  const chk = document.getElementById('notif-toggle-chk');
   if(on){
-    const result = await Notification.requestPermission();
-    if(result === 'granted'){
-      const swReg = await navigator.serviceWorker.getRegistration('./') || undefined;
-      await registerFCMToken(swReg);
-      localStorage.removeItem('mbsu-notif-off');
-      if(sub) sub.textContent = '팀 일정 변경 시 알림을 받습니다';
-      toast('✅ 알림이 활성화됐습니다 🔔');
-    } else {
-      document.getElementById('notif-toggle-chk').checked = false;
-      if(sub) sub.textContent = '브라우저 설정에서 알림을 허용해 주세요';
+    // 권한이 없으면 먼저 요청
+    if(Notification.permission !== 'granted'){
+      const result = await Notification.requestPermission();
+      if(result !== 'granted'){
+        if(chk) chk.checked = false;
+        if(sub) sub.textContent = '브라우저 설정에서 알림을 허용해 주세요';
+        return;
+      }
     }
+    // Firestore에 FCM 토큰 등록
+    localStorage.removeItem('mbsu-notif-off');
+    const swReg = await navigator.serviceWorker.getRegistration('./') || undefined;
+    await registerFCMToken(swReg);
+    if(sub) sub.textContent = '팀 일정 변경 시 알림을 받습니다';
+    toast('✅ 알림이 활성화됐습니다 🔔');
   } else {
+    // Firestore에서 FCM 토큰 삭제 → Cloudflare Worker가 이 기기로 전송 안 함
+    try {
+      if(_messaging){
+        const opts = { vapidKey: VAPID_KEY };
+        const swReg = await navigator.serviceWorker.getRegistration('./');
+        if(swReg) opts.serviceWorkerRegistration = swReg;
+        const token = await _messaging.getToken(opts);
+        if(token){
+          await db.collection('fcm_tokens').doc(token).delete();
+          await _messaging.deleteToken();
+          console.log('[FCM] token removed from Firestore');
+        }
+      }
+    } catch(e){ console.warn('[FCM] deleteToken failed', e); }
     localStorage.setItem('mbsu-notif-off','1');
     if(sub) sub.textContent = '알림이 꺼져 있습니다';
     toast('🔕 알림을 껐습니다');
