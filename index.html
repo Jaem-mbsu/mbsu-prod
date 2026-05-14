@@ -598,7 +598,7 @@ input,select,textarea{font-family:inherit}
 <div class="overlay" id="exp-overlay">
   <div class="modal">
     <div class="modal-hdr">
-      <span class="modal-title">반출 추가</span>
+      <span class="modal-title" id="exp-modal-title">반출 추가</span>
       <button class="modal-x" onclick="closeAll()">✕</button>
     </div>
     <div class="fg"><label class="fl">장비명</label><input class="fi" id="exp-equip" type="text" placeholder="장비명" list="eq-names-list" autocomplete="off"></div>
@@ -607,6 +607,7 @@ input,select,textarea{font-family:inherit}
     <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..."></div>
     <div class="fg"><label class="fl">수량</label><input class="fi" id="exp-qty" type="number" placeholder="수량"></div>
     <div class="f-actions">
+      <button class="f-del" id="exp-del-btn" onclick="delExp()" style="display:none">삭제</button>
       <button class="f-cancel" onclick="closeAll()">취소</button>
       <button class="f-save" onclick="saveExp()">저장</button>
     </div>
@@ -894,7 +895,7 @@ let events=[], equip=[], exports_=[], filmo={}, feedbacks=[];
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 let schedF='all', schedView='month', statusF='all';
 let eqF='전체', filmoP='주미르', fbFilterF='all';
-let editEvId=null, editEqId=null, editFilmoId=null, editFbId=null;
+let editEvId=null, editEqId=null, editExpId=null, editFilmoId=null, editFbId=null;
 let _unsubs=[];
 let selDate=null;
 
@@ -1339,7 +1340,7 @@ function renderExp(){
     // equipId로 장비 소유자 조회 (연동)
     const eqItem=e.equipId?equip.find(q=>q.id===e.equipId):null;
     const ownerStr=eqItem?.owner||'';
-    return `<div class="ev-item">
+    return `<div class="ev-item" style="cursor:pointer" onclick="openExpModal('${e.id}')">
       <div class="ev-bar" style="background:var(--amber)"></div>
       <div class="ev-info">
         <div class="ev-name">${x(e.equip)}</div>
@@ -1350,7 +1351,7 @@ function renderExp(){
         </div>
         ${ownerStr?`<div class="exp-owner">👤 ${x(ownerStr)}</div>`:''}
       </div>
-      <button class="del-btn" onclick="event.stopPropagation();delExp('${e.id}')">삭제</button>
+      <span style="font-size:12px;color:var(--mu2)">›</span>
     </div>`;
   }).join(''):'<div class="empty">반출 내역이 없습니다</div>';
 }
@@ -1454,7 +1455,7 @@ function _bindFilmoDrag(container){
 // ════════════════════════════════════════
 function closeAll(){
   document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
-  editEvId=null; editEqId=null; editFilmoId=null; editFbId=null;
+  editEvId=null; editEqId=null; editExpId=null; editFilmoId=null; editFbId=null;
 }
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeAll();}));
 
@@ -1584,11 +1585,15 @@ async function deleteEq(){
 }
 
 // — Export modal —
-function openExpModal(){
-  document.getElementById('exp-equip').value='';
-  document.getElementById('exp-date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('exp-dest').value='';
-  document.getElementById('exp-qty').value='';
+function openExpModal(id){
+  editExpId=id||null;
+  const e=id?exports_.find(v=>v.id===id):null;
+  document.getElementById('exp-modal-title').textContent=e?'반출 수정':'반출 추가';
+  document.getElementById('exp-equip').value=e?.equip||'';
+  document.getElementById('exp-date').value=e?.date||new Date().toISOString().slice(0,10);
+  document.getElementById('exp-dest').value=e?.dest||'';
+  document.getElementById('exp-qty').value=e?.qty||'';
+  document.getElementById('exp-del-btn').style.display=e?'':'none';
   // 장비명 자동완성 목록 갱신
   const dl=document.getElementById('eq-names-list');
   dl.innerHTML=equip.map(q=>`<option value="${x(q.name)}">`).join('');
@@ -1598,19 +1603,24 @@ async function saveExp(){
   const eq=document.getElementById('exp-equip').value.trim();
   if(!eq){toast('장비명을 입력해주세요');return;}
   const matched=equip.find(q=>q.name.toLowerCase()===eq.toLowerCase());
-  const equipId=matched?.id||null;
-  await db.collection('exports').add({
+  const equipId=matched?.id||(editExpId?exports_.find(v=>v.id===editExpId)?.equipId:null)||null;
+  const d={
     equip:eq,
     equipId:equipId,
     date:document.getElementById('exp-date').value,
     dest:document.getElementById('exp-dest').value.trim(),
     qty:document.getElementById('exp-qty').value||null
-  });
-  closeAll(); toast('✅ 저장됐습니다');
+  };
+  try{
+    if(editExpId){await db.collection('exports').doc(editExpId).update(d);}
+    else{await db.collection('exports').add(d);}
+    closeAll(); toast('✅ 저장됐습니다');
+  }catch(e){toast('오류: '+e.message);}
 }
-async function delExp(id){
-  if(!confirm('삭제?'))return;
-  await db.collection('exports').doc(id).delete();
+async function delExp(){
+  if(!editExpId||!confirm('삭제하시겠습니까?'))return;
+  await db.collection('exports').doc(editExpId).delete();
+  closeAll(); toast('삭제됐습니다');
 }
 
 // — Filmography modal —
