@@ -1467,18 +1467,10 @@ function initFCM(swReg){
     if(swReg) _messaging.useServiceWorker && _messaging.useServiceWorker(swReg);
     // 포그라운드 메시지 수신 처리
     _messaging.onMessage(payload => {
+      // 앱이 열려있을 때(foreground)는 토스트만 표시
+      // OS 알림은 백그라운드일 때 SW의 onBackgroundMessage가 처리
       const { title, body } = payload.notification || {};
       toast(`🔔 ${title||'알림'}: ${body||''}`);
-      // 포그라운드에서는 Notification API로도 표시
-      if(Notification.permission === 'granted'){
-        new Notification(title || 'MBSU Prod', {
-          body: body || '',
-          icon: './icon-192.png',
-          badge: './icon-192.png',
-          tag: payload.data?.eventId || 'mbsu-fg',
-          vibrate: [200, 100, 200]
-        });
-      }
     });
   } catch(e) {
     console.warn('[FCM] init failed', e);
