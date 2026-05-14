@@ -955,9 +955,38 @@ async function setupListeners(){
   _unsubs.forEach(u=>u()); _unsubs=[];
   const evCheck = await db.collection('events').limit(1).get();
   if(evCheck.empty){ await seedData(); }
+  let _evFirstLoad=true;
   _unsubs.push(db.collection('events').onSnapshot(snap=>{
+    // 초기 로드가 아닐 때 변경 감지 → 알림 내역 누적 (푸시 ON/OFF 무관)
+    if(!_evFirstLoad){
+      snap.docChanges().forEach(ch=>{
+        if(ch.type==='added'||ch.type==='modified'){
+          const ev={id:ch.doc.id,...ch.doc.data()};
+          const label=ch.type==='added'?'📅 일정 추가':'✏️ 일정 수정';
+          addNotifHistory(
+            `${label}: ${ev.title||'(제목없음)'}`,
+            ev.date?fmtD(ev.date):'',
+            ev.id
+          );
+        }
+        if(ch.type==='removed'){
+          const ev={id:ch.doc.id,...ch.doc.data()};
+          addNotifHistory(
+            `🗑 일정 삭제: ${ev.title||'(제목없음)'}`,
+            ev.date?fmtD(ev.date):'',
+            ''
+          );
+        }
+      });
+    }
+    _evFirstLoad=false;
     events=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(isActive('schedule')) renderSched();
+    // 앱 시작 시 알림 클릭으로 열린 경우 → 해당 날짜로 이동
+    if(window._pendingNotifEv){
+      const eid=window._pendingNotifEv; window._pendingNotifEv=null;
+      goToNotif(eid);
+    }
   }));
   _unsubs.push(db.collection('equipment').onSnapshot(snap=>{
     equip=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -1586,16 +1615,24 @@ if('serviceWorker' in navigator){
   });
 }
 
-// ── SW → 앱 메시지 수신 (백그라운드 알림 클릭 기록) ──
+// ── SW → 앱 메시지 수신 (알림 클릭 → 기록 + 캘린더 이동) ──
 if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('message', e => {
     if(e.data?.type === 'NOTIF_CLICKED'){
       const d = e.data.data || {};
       addNotifHistory(d.title || 'MBSU Prod', d.body || '', d.eventId || '');
       renderNotifBadge();
+      // 앱이 열려있을 때 → 바로 해당 날짜 캘린더로 이동
+      if(d.eventId) goToNotif(d.eventId);
     }
   });
 }
+
+// ── 알림 클릭으로 앱이 새로 열린 경우 → URL 파라미터로 eventId 전달 ──
+(function(){
+  const _ev = new URLSearchParams(location.search).get('notif');
+  if(_ev) window._pendingNotifEv = _ev;
+})();
 
 // ════════════════════════════════════════
 //  🔔 FCM PUSH NOTIFICATION SYSTEM

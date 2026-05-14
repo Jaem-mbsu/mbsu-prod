@@ -43,7 +43,11 @@ self.addEventListener('notificationclick', event => {
         target.postMessage({ type: 'NOTIF_CLICKED', data: payload });
         return target.focus();
       }
-      return self.clients.openWindow('./');
+      // 앱이 닫혀있을 때 → eventId를 URL 파라미터로 담아 열기
+      const url = payload.eventId
+        ? './?notif=' + encodeURIComponent(payload.eventId)
+        : './';
+      return self.clients.openWindow(url);
     })
   );
 });
