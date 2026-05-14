@@ -601,7 +601,13 @@ input,select,textarea{font-family:inherit}
       <span class="modal-title" id="exp-modal-title">반출 추가</span>
       <button class="modal-x" onclick="closeAll()">✕</button>
     </div>
-    <div class="fg"><label class="fl">장비명</label><input class="fi" id="exp-equip" type="text" placeholder="장비명" list="eq-names-list" autocomplete="off"></div>
+    <div class="fg">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <label class="fl" style="margin-bottom:0">장비명</label>
+        <button type="button" id="exp-eq-edit-btn" onclick="editLinkedEq()" style="display:none;font-size:11px;color:var(--blue);font-weight:600;padding:2px 6px;border-radius:6px;background:var(--blue-d)">🔧 장비 수정</button>
+      </div>
+      <input class="fi" id="exp-equip" type="text" placeholder="장비명" list="eq-names-list" autocomplete="off" oninput="updateExpEqEditBtn()">
+    </div>
     <datalist id="eq-names-list"></datalist>
     <div class="fg"><label class="fl">반출 날짜</label><input class="fi" id="exp-date" type="date"></div>
     <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..."></div>
@@ -1594,6 +1600,9 @@ function openExpModal(id){
   document.getElementById('exp-dest').value=e?.dest||'';
   document.getElementById('exp-qty').value=e?.qty||'';
   document.getElementById('exp-del-btn').style.display=e?'':'none';
+  // 장비 수정 버튼: 연동된 장비가 있을 때만 표시
+  const eqEditBtn=document.getElementById('exp-eq-edit-btn');
+  eqEditBtn.style.display=(e?.equipId)?'':'none';
   // 장비명 자동완성 목록 갱신
   const dl=document.getElementById('eq-names-list');
   dl.innerHTML=equip.map(q=>`<option value="${x(q.name)}">`).join('');
@@ -1621,6 +1630,21 @@ async function delExp(){
   if(!editExpId||!confirm('삭제하시겠습니까?'))return;
   await db.collection('exports').doc(editExpId).delete();
   closeAll(); toast('삭제됐습니다');
+}
+// 반출 모달에서 장비명 바꿀 때 버튼 표시 재계산
+function updateExpEqEditBtn(){
+  const val=document.getElementById('exp-equip').value.trim();
+  const matched=equip.find(q=>q.name.toLowerCase()===val.toLowerCase());
+  document.getElementById('exp-eq-edit-btn').style.display=matched?'':'none';
+}
+// 반출 모달 → 장비 수정 모달로 전환
+function editLinkedEq(){
+  const val=document.getElementById('exp-equip').value.trim();
+  const matched=equip.find(q=>q.name.toLowerCase()===val.toLowerCase());
+  if(!matched) return;
+  // 반출 오버레이 닫고 장비 모달 열기
+  document.getElementById('exp-overlay').classList.remove('show');
+  openEqModal(matched.id);
 }
 
 // — Filmography modal —
