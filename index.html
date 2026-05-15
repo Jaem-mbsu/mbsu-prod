@@ -219,7 +219,26 @@ input,select,textarea{font-family:inherit}
 .exp-view-tab{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;color:var(--mu);background:var(--card2);border:1px solid var(--bd);transition:all .15s}
 .exp-view-tab.active{color:var(--blue);background:var(--blue-d);border-color:var(--blue)}
 .eq-export-badge{font-size:10px;font-weight:700;color:#fff;background:var(--amber);padding:2px 8px;border-radius:7px;white-space:nowrap}
+.eq-planned-badge{font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-d);border:1px solid var(--blue);padding:2px 8px;border-radius:7px;white-space:nowrap}
 .exp-owner{font-size:11px;color:var(--mu);margin-top:2px}
+/* ── PRODUCTION TABS ─────────────────────── */
+.prod-tabs{display:flex;gap:6px;padding:12px 14px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}
+.prod-tabs::-webkit-scrollbar{display:none}
+.prod-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;color:var(--mu);background:var(--card);border:1px solid var(--bd);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.prod-tab:hover{color:var(--tx);border-color:var(--bd2)}
+.prod-tab.active{color:var(--blue);background:var(--blue-d);border-color:var(--blue)}
+/* ── DEST ACTIONS BAR ───────────────────── */
+.dest-actions-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 10px;border-bottom:1px solid var(--bd);margin-bottom:8px}
+.dest-actions-title{font-size:14px;font-weight:700;color:var(--tx)}
+.dest-return-all-btn{font-size:12px;color:var(--red);font-weight:700;padding:7px 14px;border-radius:10px;background:var(--red-d);border:1px solid rgba(255,59,48,.2)}
+/* ── ARCHIVED PRODUCTIONS ────────────────── */
+.archived-section{margin-top:20px;padding-top:14px;border-top:1px solid var(--bd)}
+.archived-section-hdr{font-size:11px;font-weight:700;color:var(--mu);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+.archived-block{background:var(--card2);border:1px dashed var(--bd2);border-radius:12px;margin-bottom:8px;overflow:hidden;opacity:.75}
+.archived-block-hdr{padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.archived-block-name{font-size:13px;font-weight:600;color:var(--mu)}
+.archived-block-sub{font-size:10px;color:var(--mu2);margin-top:2px}
+.archived-restore-btn{font-size:11px;color:var(--blue);font-weight:700;padding:5px 12px;border-radius:8px;background:var(--blue-d);border:none}
 .filmo-tabs{display:flex;background:var(--card);border-bottom:1px solid var(--bd);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}
 .filmo-tabs::-webkit-scrollbar{display:none}
 .filmo-tab{padding:12px 20px;font-size:13px;font-weight:600;color:var(--mu);white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;flex-shrink:0}
@@ -528,13 +547,14 @@ input,select,textarea{font-family:inherit}
       <button class="add-btn" onclick="openExpModal()">+ 반출 추가</button>
     </div>
   </div>
-  <div class="list-body">
-    <div class="exp-view-tabs">
-      <button class="exp-view-tab active" id="exp-tab-all" onclick="setExpView('all')">전체</button>
-      <button class="exp-view-tab" id="exp-tab-project" onclick="setExpView('project')">작품별</button>
+  <div class="list-body" style="padding-top:0">
+    <div class="prod-tabs" id="prod-tabs"></div>
+    <div style="padding:0">
+      <div id="dest-actions-wrap"></div>
+      <div class="el-hdr"><span>반출 현황</span><span id="exp-count" style="color:var(--mu)"></span></div>
+      <div class="ev-list" id="exp-list"></div>
+      <div id="archived-list"></div>
     </div>
-    <div class="el-hdr"><span>반출 현황</span><span id="exp-count" style="color:var(--mu)"></span></div>
-    <div class="ev-list" id="exp-list"></div>
   </div>
 </div>
 <div class="page" id="pg-filmography">
@@ -652,6 +672,13 @@ input,select,textarea{font-family:inherit}
     <div class="fg"><label class="fl">반출 날짜</label><input class="fi" id="exp-date" type="date"></div>
     <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..."></div>
     <div class="fg"><label class="fl">수량</label><input class="fi" id="exp-qty" type="number" placeholder="수량"></div>
+    <div class="fg">
+      <label class="fl">반출 상태</label>
+      <div class="type-chips">
+        <button type="button" class="tchip" id="exp-btn-planned" onclick="setExpPlanned(true)">📋 반출 예정</button>
+        <button type="button" class="tchip active" id="exp-btn-actual" onclick="setExpPlanned(false)">📤 반출중</button>
+      </div>
+    </div>
     <div class="f-actions">
       <button class="f-del" id="exp-del-btn" onclick="delExp()" style="display:none">삭제</button>
       <button class="f-cancel" onclick="closeAll()">취소</button>
@@ -939,7 +966,7 @@ const INIT_EQ = [
   {id:'eq46',name:'26mm socket',              company:'',                  types:['Light','Line'],     qty:null, notes:'',                       owner:'주미르'},
 ];
 
-let events=[], equip=[], exports_=[], filmo={}, feedbacks=[];
+let events=[], equip=[], exports_=[], filmo={}, feedbacks=[], archivedProds=[];
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 let schedF='all', schedView='month', statusF='all';
 let eqF='전체', filmoP='주미르', fbFilterF='all';
@@ -1100,8 +1127,12 @@ async function setupListeners(){
     exports_=snap.docs.map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     if(isActive('exports')) renderExp();
-    // 반출중 배지가 장비 목록에도 표시되므로 같이 갱신
     if(isActive('equipment')) renderEq();
+  }));
+  _unsubs.push(db.collection('archived_productions').onSnapshot(snap=>{
+    archivedProds=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.archivedAt||0)-(a.archivedAt||0));
+    if(isActive('exports')) renderArchivedProds();
   }));
   _unsubs.push(db.collection('filmography').onSnapshot(snap=>{
     filmo={};
@@ -1379,7 +1410,8 @@ function eqRow(e){
   const g=eqGroup(e.types||[]);
   const subParts=[e.company&&e.company!=='-'?e.company:null,e.notes].filter(Boolean);
   const typeLabel=(e.types||[]).join(', ')||'';
-  const activeExp=exports_.find(ex=>ex.equipId===e.id);
+  const activeExp=exports_.find(ex=>ex.equipId===e.id&&!ex.planned);
+  const plannedExp=!activeExp?exports_.find(ex=>ex.equipId===e.id&&ex.planned===true):null;
   const priceStr=e.price!=null?'₩'+Number(e.price).toLocaleString():'';
   const dateStr=e.buydate?e.buydate.replace(/-/g,'.'):'';
   const icoHtml=e.photo
@@ -1396,7 +1428,7 @@ function eqRow(e){
       ${priceStr?`<div class="eq-price-tag">💰 ${priceStr}${dateStr?' · 📅 '+dateStr:''}</div>`:dateStr?`<div class="eq-buydate-tag">📅 ${dateStr}</div>`:''}
     </div>
     <div class="eq-row-right">
-      ${activeExp?`<div class="eq-export-badge">반출중</div>`:''}
+      ${activeExp?`<div class="eq-export-badge">반출중</div>`:plannedExp?`<div class="eq-planned-badge">반출 예정</div>`:''}
       ${e.qty!=null?`<div class="eq-qty-badge">${e.qty}개</div>`:''}
     </div>
   </div>`;
@@ -1406,18 +1438,19 @@ function setEqF(t){ eqF=t; renderEq(); }
 // ════════════════════════════════════════
 //  EXPORTS
 // ════════════════════════════════════════
-let expView='all';
-function setExpView(v){
-  expView=v;
-  document.getElementById('exp-tab-all').classList.toggle('active',v==='all');
-  document.getElementById('exp-tab-project').classList.toggle('active',v==='project');
-  renderExp();
-}
+let expDest='all';
+function setExpDest(d){ expDest=d; renderExp(); }
+
 function expItemHtml(e){
   const eqItem=e.equipId?equip.find(q=>q.id===e.equipId):null;
   const ownerStr=eqItem?.owner||'';
+  const isPlanned=e.planned===true;
+  const barColor=isPlanned?'var(--blue)':'var(--amber)';
+  const badge=isPlanned
+    ?`<span style="font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-d);border:1px solid var(--blue);padding:2px 8px;border-radius:7px">📋 반출 예정</span>`
+    :`<span style="font-size:10px;font-weight:700;color:#fff;background:var(--amber);padding:2px 8px;border-radius:7px">📤 반출중</span>`;
   return `<div class="ev-item" style="cursor:pointer" onclick="openExpModal('${e.id}')">
-    <div class="ev-bar" style="background:var(--amber)"></div>
+    <div class="ev-bar" style="background:${barColor}"></div>
     <div class="ev-info">
       <div class="ev-name">${x(e.equip)}</div>
       <div class="ev-meta">
@@ -1427,39 +1460,95 @@ function expItemHtml(e){
       </div>
       ${ownerStr?`<div class="exp-owner">👤 ${x(ownerStr)}</div>`:''}
     </div>
-    <span style="font-size:12px;color:var(--mu2)">›</span>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+      ${badge}
+      <span style="font-size:12px;color:var(--mu2)">›</span>
+    </div>
   </div>`;
 }
+
 function renderExp(){
-  document.getElementById('exp-count').textContent=`${exports_.length}건`;
-  const c=document.getElementById('exp-list');
-  if(!exports_.length){c.innerHTML='<div class="empty">반출 내역이 없습니다</div>';return;}
-  if(expView==='project'){
-    // 작품별 그룹
-    const byDest={};
-    exports_.forEach(e=>{const k=e.dest||'(미지정)';(byDest[k]=byDest[k]||[]).push(e);});
-    c.innerHTML=Object.entries(byDest).map(([dest,items])=>`
-      <div class="exp-project-block">
-        <div class="exp-project-hdr">
-          <div>
-            <div class="exp-project-name">📁 ${x(dest)}</div>
-            <div class="exp-project-cnt">${items.length}개 장비</div>
-          </div>
-          <button class="exp-return-all-btn" onclick="event.stopPropagation();returnAllByDest('${x(dest)}')">전체 반납</button>
-        </div>
-        ${items.map(expItemHtml).join('')}
-      </div>`).join('');
-  } else {
-    c.innerHTML=exports_.map(expItemHtml).join('');
+  // 1. 작품 탭 (전체 + 각 작품)
+  const dests=[...new Set(exports_.map(e=>e.dest||'(미지정)'))];
+  const tabsEl=document.getElementById('prod-tabs');
+  if(tabsEl){
+    tabsEl.innerHTML=[
+      `<button class="prod-tab${expDest==='all'?' active':''}" onclick="setExpDest('all')">전체</button>`,
+      ...dests.map(d=>`<button class="prod-tab${expDest===d?' active':''}" onclick="setExpDest(${JSON.stringify(d)})">${x(d)}</button>`)
+    ].join('');
   }
+  // 2. 작품 선택시 액션 바 표시
+  const barWrap=document.getElementById('dest-actions-wrap');
+  if(barWrap){
+    barWrap.innerHTML=expDest!=='all'?`<div class="dest-actions-bar">
+      <div class="dest-actions-title">📁 ${x(expDest)}</div>
+      <button class="dest-return-all-btn" onclick="returnAllByDest(${JSON.stringify(expDest)})">전체 반납</button>
+    </div>`:'';
+  }
+  // 3. 필터링된 목록
+  const filtered=expDest==='all'?exports_:exports_.filter(e=>(e.dest||'(미지정)')===expDest);
+  document.getElementById('exp-count').textContent=`${filtered.length}건`;
+  const c=document.getElementById('exp-list');
+  c.innerHTML=filtered.length?filtered.map(expItemHtml).join(''):'<div class="empty">반출 내역이 없습니다</div>';
+  // 4. 보관된 작품 섹션
+  renderArchivedProds();
 }
+
+function renderArchivedProds(){
+  const el=document.getElementById('archived-list');
+  if(!el) return;
+  if(!archivedProds.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="archived-section">
+    <div class="archived-section-hdr">📦 보관된 작품 (${archivedProds.length})</div>
+    ${archivedProds.map(p=>`
+      <div class="archived-block">
+        <div class="archived-block-hdr">
+          <div>
+            <div class="archived-block-name">📁 ${x(p.dest||'(미지정)')}</div>
+            <div class="archived-block-sub">${(p.items||[]).length}개 장비 · ${p.archivedAt?new Date(p.archivedAt).toLocaleDateString('ko-KR',{year:'numeric',month:'short',day:'numeric'}):''}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="archived-restore-btn" onclick="restoreProd('${p.id}')">복원</button>
+            <button class="del-btn" onclick="deleteProd('${p.id}')">삭제</button>
+          </div>
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+
 async function returnAllByDest(dest){
   const targets=exports_.filter(e=>(e.dest||'(미지정)')===dest);
-  if(!targets.length||!confirm(`"${dest}" 작품의 장비 ${targets.length}개를 모두 반납 처리하시겠습니까?`))return;
+  if(!targets.length||!confirm(`"${dest}" 작품의 장비 ${targets.length}개를 모두 반납 처리할까요?`))return;
+  const doArchive=confirm('반납 후 작품 기록을 보관할까요?\n[확인] 보관  /  [취소] 기록 삭제');
   const batch=db.batch();
   targets.forEach(e=>batch.delete(db.collection('exports').doc(e.id)));
   await batch.commit();
+  if(doArchive){
+    await db.collection('archived_productions').add({
+      dest,
+      items:targets.map(e=>({equip:e.equip,equipId:e.equipId||null,qty:e.qty||null,date:e.date||null})),
+      archivedAt:Date.now()
+    });
+  }
+  expDest='all';
   toast('✅ 전체 반납 처리됐습니다');
+}
+
+async function restoreProd(id){
+  const p=archivedProds.find(a=>a.id===id);
+  if(!p||!confirm(`"${p.dest||'(미지정)'}" 작품을 반출리스트에 복원할까요?`))return;
+  const batch=db.batch();
+  (p.items||[]).forEach(item=>{
+    batch.set(db.collection('exports').doc(),{...item,dest:p.dest,planned:false});
+  });
+  await batch.commit();
+  await db.collection('archived_productions').doc(id).delete();
+  toast('✅ 복원됐습니다');
+}
+async function deleteProd(id){
+  if(!confirm('보관된 작품 기록을 완전히 삭제할까요?'))return;
+  await db.collection('archived_productions').doc(id).delete();
+  toast('삭제됐습니다');
 }
 
 // ════════════════════════════════════════
@@ -1677,11 +1766,18 @@ function openEqModal(id){
   const expSec=document.getElementById('eq-export-section');
   const expWrap=document.getElementById('eq-export-status-wrap');
   if(id){
-    const activeExp=exports_.find(ex=>ex.equipId===id);
+    const activeExp=exports_.find(ex=>ex.equipId===id&&!ex.planned);
+    const plannedExp=!activeExp?exports_.find(ex=>ex.equipId===id&&ex.planned===true):null;
     expSec.style.display='';
     if(activeExp){
       expWrap.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:8px">📤 반출중: ${x(activeExp.dest||'')}</div>
         <button class="f-cancel" style="width:100%;margin-top:0" onclick="returnEq('${activeExp.id}')">반납 처리</button>`;
+    } else if(plannedExp){
+      expWrap.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:8px">📋 반출 예정: ${x(plannedExp.dest||'')}</div>
+        <div style="display:flex;gap:8px">
+          <button class="f-cancel" style="flex:1" onclick="returnEq('${plannedExp.id}')">취소</button>
+          <button class="f-save" style="flex:1;background:var(--amber)" onclick="confirmExp('${plannedExp.id}')">반출 확정</button>
+        </div>`;
     } else {
       expWrap.innerHTML=`<button class="f-save" style="width:100%;background:var(--amber)" onclick="openExpFromEq('${id}')">+ 반출 등록</button>`;
     }
@@ -1807,6 +1903,7 @@ function openExpModal(id){
   document.getElementById('exp-date').value=e?.date||new Date().toISOString().slice(0,10);
   document.getElementById('exp-dest').value=e?.dest||'';
   document.getElementById('exp-qty').value=e?.qty||'';
+  setExpPlanned(e?.planned===true);
   document.getElementById('exp-del-btn').style.display=e?'':'none';
   document.getElementById('exp-overlay').classList.add('show');
 }
@@ -1820,7 +1917,8 @@ async function saveExp(){
     equipId,
     date:document.getElementById('exp-date').value,
     dest:document.getElementById('exp-dest').value.trim(),
-    qty:document.getElementById('exp-qty').value||null
+    qty:document.getElementById('exp-qty').value||null,
+    planned:getExpPlanned()
   };
   try{
     if(editExpId){await db.collection('exports').doc(editExpId).update(d);}
@@ -1832,6 +1930,20 @@ async function delExp(){
   if(!editExpId||!confirm('삭제하시겠습니까?'))return;
   await db.collection('exports').doc(editExpId).delete();
   closeAll(); toast('삭제됐습니다');
+}
+// 반출 예정 ↔ 반출중 토글
+function setExpPlanned(planned){
+  document.getElementById('exp-btn-planned')?.classList.toggle('active', planned);
+  document.getElementById('exp-btn-actual')?.classList.toggle('active', !planned);
+}
+function getExpPlanned(){
+  return document.getElementById('exp-btn-planned')?.classList.contains('active')===true;
+}
+// 반출 예정 → 반출 확정
+async function confirmExp(expId){
+  if(!confirm('반출 확정 처리할까요?'))return;
+  await db.collection('exports').doc(expId).update({planned:false});
+  closeAll(); toast('✅ 반출 확정됐습니다');
 }
 
 // — Filmography modal —
