@@ -273,6 +273,12 @@ input,select,textarea{font-family:inherit}
 .fi,.fsel{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--tx);font-size:13px;transition:border-color .15s}
 .fi::placeholder{color:var(--mu2)}.fi:focus,.fsel:focus{outline:none;border-color:var(--blue);background:var(--input-focus-bg)}
 .fsel option{background:var(--card);color:var(--tx)}
+#exp-equip{height:44px;max-height:44px}
+/* ── DEST SUGGESTION DROPDOWN ───────────── */
+.dest-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--bd);border-radius:10px;max-height:180px;overflow-y:auto;z-index:500;box-shadow:var(--shadow-2);margin-top:4px}
+.dest-sugg-item{padding:11px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bd);color:var(--tx)}
+.dest-sugg-item:last-child{border-bottom:none}
+.dest-sugg-item:hover,.dest-sugg-item:active{background:var(--blue-d);color:var(--blue)}
 .f-actions{display:flex;gap:8px;margin-top:20px}
 .f-cancel{background:var(--bg);border:1px solid var(--bd);color:var(--tx);padding:11px 16px;border-radius:10px;font-size:13px;font-weight:500}
 .f-save{flex:1;background:var(--tx);color:var(--bg);padding:11px;border-radius:10px;font-size:13px;font-weight:700;transition:opacity .15s}
@@ -668,9 +674,14 @@ input,select,textarea{font-family:inherit}
       <span class="modal-title" id="exp-modal-title">반출 추가</span>
       <button class="modal-x" onclick="closeAll()">✕</button>
     </div>
-    <div class="fg"><label class="fl">장비 선택</label><select class="fsel" id="exp-equip"></select></div>
+    <div class="fg"><label class="fl">장비 선택</label><select class="fsel" id="exp-equip" size="1"></select></div>
     <div class="fg"><label class="fl">반출 날짜</label><input class="fi" id="exp-date" type="date"></div>
-    <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..." list="exp-dest-list" autocomplete="off"><datalist id="exp-dest-list"></datalist></div>
+    <div class="fg" style="position:relative">
+      <label class="fl">반출처 / 프로덕션</label>
+      <input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..." autocomplete="off"
+        onfocus="showDestSugg()" oninput="showDestSugg()" onblur="hideDestSugg()">
+      <div class="dest-suggestions" id="exp-dest-sugg" style="display:none"></div>
+    </div>
     <div class="fg"><label class="fl">수량</label><input class="fi" id="exp-qty" type="number" placeholder="수량"></div>
     <div class="fg">
       <label class="fl">반출 상태</label>
@@ -1443,11 +1454,46 @@ let _destList=[];
 function setExpDest(d){ expDest=d; renderExp(); }
 function setExpDestByIdx(i){ setExpDest(i===-1?'all':_destList[i]); }
 
+// 작품별 고정 색상 팔레트
+const DEST_COLORS=['#007aff','#34c759','#ff9f0a','#ff3b30','#af52de','#ff6b35','#00c7be','#5856d6','#ff2d55','#30b0c7'];
+function getDestColor(dest){
+  if(!dest) return 'var(--amber)';
+  let h=0; for(let i=0;i<dest.length;i++) h=(h*31+dest.charCodeAt(i))>>>0;
+  return DEST_COLORS[h%DEST_COLORS.length];
+}
+
+// 반출처 커스텀 드롭다운
+function showDestSugg(){
+  const input=document.getElementById('exp-dest');
+  const sugg=document.getElementById('exp-dest-sugg');
+  if(!input||!sugg) return;
+  const val=input.value.toLowerCase();
+  const all=[...new Set([..._destList,...exports_.map(e=>e.dest||'').filter(Boolean)])];
+  const filtered=val?all.filter(d=>d.toLowerCase().includes(val)):all;
+  if(!filtered.length){sugg.style.display='none';return;}
+  sugg.innerHTML=filtered.map((d,i)=>`<div class="dest-sugg-item" onmousedown="selectDestSugg(event,${i})">${x(d)}</div>`).join('');
+  sugg._list=filtered;
+  sugg.style.display='';
+}
+function selectDestSugg(ev,i){
+  ev.preventDefault();
+  const sugg=document.getElementById('exp-dest-sugg');
+  const val=sugg._list?.[i];
+  if(val) document.getElementById('exp-dest').value=val;
+  sugg.style.display='none';
+}
+function hideDestSugg(){
+  setTimeout(()=>{
+    const sugg=document.getElementById('exp-dest-sugg');
+    if(sugg) sugg.style.display='none';
+  },150);
+}
+
 function expItemHtml(e){
   const eqItem=e.equipId?equip.find(q=>q.id===e.equipId):null;
   const ownerStr=eqItem?.owner||'';
   const isPlanned=e.planned===true;
-  const barColor=isPlanned?'var(--blue)':'var(--amber)';
+  const barColor=isPlanned?'var(--blue)':getDestColor(e.dest);
   const badge=isPlanned
     ?`<span style="font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-d);border:1px solid var(--blue);padding:2px 8px;border-radius:7px">📋 반출 예정</span>`
     :`<span style="font-size:10px;font-weight:700;color:#fff;background:var(--amber);padding:2px 8px;border-radius:7px">📤 반출중</span>`;
@@ -1906,12 +1952,6 @@ function openExpModal(id){
   document.getElementById('exp-dest').value=e?.dest||'';
   document.getElementById('exp-qty').value=e?.qty||'';
   setExpPlanned(e?.planned===true);
-  // 반출처 자동완성 목록 업데이트
-  const dl=document.getElementById('exp-dest-list');
-  if(dl){
-    const dests=[...new Set([..._destList,...exports_.map(e=>e.dest||'').filter(Boolean)])];
-    dl.innerHTML=dests.map(d=>`<option value="${x(d)}">`).join('');
-  }
   document.getElementById('exp-del-btn').style.display=e?'':'none';
   document.getElementById('exp-overlay').classList.add('show');
 }
