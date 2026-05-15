@@ -670,7 +670,7 @@ input,select,textarea{font-family:inherit}
     </div>
     <div class="fg"><label class="fl">장비 선택</label><select class="fsel" id="exp-equip"></select></div>
     <div class="fg"><label class="fl">반출 날짜</label><input class="fi" id="exp-date" type="date"></div>
-    <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..."></div>
+    <div class="fg"><label class="fl">반출처 / 프로덕션</label><input class="fi" id="exp-dest" type="text" placeholder="지불아, 별짓..." list="exp-dest-list" autocomplete="off"><datalist id="exp-dest-list"></datalist></div>
     <div class="fg"><label class="fl">수량</label><input class="fi" id="exp-qty" type="number" placeholder="수량"></div>
     <div class="fg">
       <label class="fl">반출 상태</label>
@@ -1439,7 +1439,9 @@ function setEqF(t){ eqF=t; renderEq(); }
 //  EXPORTS
 // ════════════════════════════════════════
 let expDest='all';
+let _destList=[];
 function setExpDest(d){ expDest=d; renderExp(); }
+function setExpDestByIdx(i){ setExpDest(i===-1?'all':_destList[i]); }
 
 function expItemHtml(e){
   const eqItem=e.equipId?equip.find(q=>q.id===e.equipId):null;
@@ -1469,12 +1471,12 @@ function expItemHtml(e){
 
 function renderExp(){
   // 1. 작품 탭 (전체 + 각 작품)
-  const dests=[...new Set(exports_.map(e=>e.dest||'(미지정)'))];
+  _destList=[...new Set(exports_.map(e=>e.dest||'(미지정)'))];
   const tabsEl=document.getElementById('prod-tabs');
   if(tabsEl){
     tabsEl.innerHTML=[
-      `<button class="prod-tab${expDest==='all'?' active':''}" onclick="setExpDest('all')">전체</button>`,
-      ...dests.map(d=>`<button class="prod-tab${expDest===d?' active':''}" onclick="setExpDest(${JSON.stringify(d)})">${x(d)}</button>`)
+      `<button class="prod-tab${expDest==='all'?' active':''}" onclick="setExpDestByIdx(-1)">전체</button>`,
+      ..._destList.map((d,i)=>`<button class="prod-tab${expDest===d?' active':''}" onclick="setExpDestByIdx(${i})">${x(d)}</button>`)
     ].join('');
   }
   // 2. 작품 선택시 액션 바 표시
@@ -1482,7 +1484,7 @@ function renderExp(){
   if(barWrap){
     barWrap.innerHTML=expDest!=='all'?`<div class="dest-actions-bar">
       <div class="dest-actions-title">📁 ${x(expDest)}</div>
-      <button class="dest-return-all-btn" onclick="returnAllByDest(${JSON.stringify(expDest)})">전체 반납</button>
+      <button class="dest-return-all-btn" onclick="returnAllByDest(expDest)">전체 반납</button>
     </div>`:'';
   }
   // 3. 필터링된 목록
@@ -1904,6 +1906,12 @@ function openExpModal(id){
   document.getElementById('exp-dest').value=e?.dest||'';
   document.getElementById('exp-qty').value=e?.qty||'';
   setExpPlanned(e?.planned===true);
+  // 반출처 자동완성 목록 업데이트
+  const dl=document.getElementById('exp-dest-list');
+  if(dl){
+    const dests=[...new Set([..._destList,...exports_.map(e=>e.dest||'').filter(Boolean)])];
+    dl.innerHTML=dests.map(d=>`<option value="${x(d)}">`).join('');
+  }
   document.getElementById('exp-del-btn').style.display=e?'':'none';
   document.getElementById('exp-overlay').classList.add('show');
 }
