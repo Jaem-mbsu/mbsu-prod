@@ -1946,10 +1946,7 @@ function openExpFromEq(eqId){
   document.getElementById('eq-overlay').classList.remove('show');
   openExpModal();
   // 장비 미리 선택
-  setTimeout(()=>{
-    const sel=document.getElementById('exp-equip');
-    if(sel) sel.value=eqId;
-  },50);
+  setTimeout(()=>{ selectEquip(eqId); }, 80);
 }
 // 장비 모달에서 반납 처리
 async function returnEq(expId){
@@ -2016,7 +2013,7 @@ function renderEquipPickerOptions(q){
     const t=item.types?.[0]||'기타';
     if(!q&&t!==lastType){ html+=`<div class="equip-picker-group">${t}</div>`; lastType=t; }
     const label=x(item.name)+(item.company?` <span style="color:var(--mu);font-size:11px">(${x(item.company)})</span>`:'');
-    html+=`<div class="equip-picker-item${cur===item.id?' selected':''}" onclick="selectEquip('${item.id}',${JSON.stringify(item.name+(item.company?' ('+item.company+')':''))})">${label}</div>`;
+    html+=`<div class="equip-picker-item${cur===item.id?' selected':''}" onclick="selectEquip('${item.id}')">${label}</div>`;
   });
   if(!html) html='<div style="padding:14px;font-size:13px;color:var(--mu);text-align:center">검색 결과 없음</div>';
   document.getElementById('exp-equip-options').innerHTML=html;
@@ -2028,10 +2025,13 @@ function toggleEquipPicker(){
   else { list.classList.add('open'); document.getElementById('exp-equip-search').focus(); }
 }
 function filterEquipPicker(q){ renderEquipPickerOptions(q); }
-function selectEquip(id, label){
+function selectEquip(id){
+  const item=equip.find(q=>q.id===id);
+  if(!item) return;
   document.getElementById('exp-equip').value=id;
   const btn=document.getElementById('exp-equip-btn');
-  btn.textContent=label; btn.classList.remove('placeholder');
+  btn.textContent=item.name+(item.company?' ('+item.company+')':'');
+  btn.classList.remove('placeholder');
   document.getElementById('exp-equip-list').classList.remove('open');
 }
 
